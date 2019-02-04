@@ -36,12 +36,10 @@ public class CustomView extends View {
     protected void onDraw(Canvas canvas){
 
         float customViewWidth = MainActivity.customViewWidth;
-        //正三角形の一辺 = width / (3^(1/2) = 0.578)
-//        float yourYPosition = yourXPosition / 2 * 2 / (float)sqrt(3.0);
         float yourXPosition = customViewWidth / 2;
-        float yourYPosition = customViewWidth * (float)0.7;
+        float yourYPosition = customViewWidth * (float)0.8;
         Log.d("CustomView", "yourYPosition:"+ yourYPosition);
-        double radius = yourYPosition - (customViewWidth - yourYPosition);
+        double radius = customViewWidth * 0.4;
 
         float targetXPosition;
         float targetYPosition;

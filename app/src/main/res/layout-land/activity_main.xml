@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -8,10 +7,92 @@
     android:orientation="horizontal"
     tools:context=".MainActivity">
 
-    <com.s_k.devsec.positionnavi010.CustomView
-        android:id="@+id/customView"
-        android:layout_width="10dp"
-        android:layout_height="match_parent" />
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+
+        <com.s_k.devsec.positioncommu.CustomView
+            android:id="@+id/customView"
+            android:layout_width="10dp"
+            android:layout_height="match_parent" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#CCffffff"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#CCffffff"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:background="#CCffffff"
+                    android:text="@string/tv_distance"
+                    android:textColor="#000000"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:id="@+id/tvDistance"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:background="#CCffffff"
+                    android:gravity="end"
+                    android:text=""
+                    android:textColor="#000000"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:background="#CCffffff"
+                    android:text="m"
+                    android:textColor="#000000"
+                    android:textSize="20sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/linearLayoutAngle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#CCffffff"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:background="#CCffffff"
+                    android:text="@string/tv_angle"
+                    android:textColor="#000000"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:id="@+id/tvAngle"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:background="#CCffffff"
+                    android:gravity="end"
+                    android:text=""
+                    android:textColor="#000000"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:background="#CCffffff"
+                    android:text="°"
+                    android:textColor="#000000"
+                    android:textSize="20sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -23,68 +104,6 @@
             android:layout_height="match_parent"
             android:layout_marginLeft="8dp"
             android:orientation="vertical">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:text="@string/tv_distance"
-                    android:textColor="#cccccc"
-                    android:textSize="20sp" />
-
-                <TextView
-                    android:id="@+id/tvDistance"
-                    android:layout_width="50dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:text=""
-                    android:textColor="#cccccc"
-                    android:textSize="20sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dp"
-
-                    android:text="m"
-                    android:textColor="#cccccc"
-                    android:textSize="20sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/linearLayoutAngle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:text="@string/tv_angle"
-                    android:textColor="#cccccc"
-                    android:textSize="20sp" />
-
-                <TextView
-                    android:id="@+id/tvAngle"
-                    android:layout_width="50dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:text=""
-                    android:textColor="#cccccc"
-                    android:textSize="20sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dp"
-                    android:text="°"
-                    android:textColor="#cccccc"
-                    android:textSize="20sp" />
-            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
