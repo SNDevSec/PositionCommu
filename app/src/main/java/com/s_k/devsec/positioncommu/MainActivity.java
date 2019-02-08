@@ -162,8 +162,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             ActivityCompat.requestPermissions(MainActivity.this, permissions, 1000);
             return;
         }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
 
         tvSendDist = findViewById(R.id.tvSendDist);
         tvSendAngle = findViewById(R.id.tvSendAngle);
@@ -578,6 +578,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     @Override
     protected void onPause() {
         Log.d("MainActivity", "onPause()");
+//        locationManager.removeUpdates(this);
         super.onPause();
     }
 

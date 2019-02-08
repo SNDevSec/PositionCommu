@@ -126,7 +126,11 @@
                             android:layout_height="wrap_content"
                             android:text="Latitude"
                             android:textSize="12sp"
-                            android:textColor="@android:color/background_light" />
+                            android:textColor="@android:color/background_light"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true">
+                            <requestFocus />
+                        </TextView>
 
                         <TextView
                             android:id="@+id/tvLatitude"
