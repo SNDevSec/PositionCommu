@@ -33,6 +33,8 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,9 +55,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     int commPort;
 
     Handler mHandler;
-
-    String naviIpAddress = "";
-    String naviPortNumber = "5000";
 
     LocationManager locationManager;
     double latitude = 0; //緯度フィールド
@@ -80,10 +79,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     Button btSendDemo2;
     Button btContStart;
     Button btContStop;
-    EditText etIpAddress;
-    EditText etPortNumber;
-    Button btIpSetting;
-    Button btPortSetting;
+//    EditText etIpAddress;
+//    EditText etPortNumber;
+//    Button btIpSetting;
+//    Button btPortSetting;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         tvIpAddress = findViewById(R.id.tvIpAddress);
         tvIpAddress.setText(getWifiIPAddress(MainActivity.this));
         tvPortNumber = findViewById(R.id.tvPortNumber);
-        tvPortNumber.setText(globals.getPortNumber());
+        tvPortNumber.setText(globals.getMyPortNumber());
 
         final CustomView customView = findViewById(R.id.customView);
 
@@ -156,22 +155,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         tvLongitude = findViewById(R.id.tvLongitude);
         tvProvider = findViewById(R.id.tvProvider);
 
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
-            ActivityCompat.requestPermissions(MainActivity.this, permissions, 1000);
-            return;
-        }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
-
         tvSendDist = findViewById(R.id.tvSendDist);
         tvSendAngle = findViewById(R.id.tvSendAngle);
 
-        etIpAddress = findViewById(R.id.etIpAddress);
-        etIpAddress.setText(getWifiIPAddress3octet(MainActivity.this));
-        etPortNumber = findViewById(R.id.etPortNumber);
-        etPortNumber.setText(naviPortNumber);
+//        etIpAddress = findViewById(R.id.etIpAddress);
+//        etIpAddress.setText(getWifiIPAddress3octet(MainActivity.this));
+//        etPortNumber = findViewById(R.id.etPortNumber);
+//        etPortNumber.setText(peerPortNumber);
 
         btMeasStart = findViewById(R.id.btMeasStart);
         btMeasStart.setEnabled(false);
@@ -204,7 +194,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 dist = "30";
                 angle = "40";
                 tvSendDist.setText(dist);
-                tvAngle.setText(angle);
+                tvSendAngle.setText(angle);
                 mButtonClicked = view;
                 UDPSenderThread mUDPSender = new UDPSenderThread();
                 mUDPSender.start();
@@ -219,7 +209,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 dist = "10";
                 angle = "-50";
                 tvSendDist.setText(dist);
-                tvAngle.setText(angle);
+                tvSendAngle.setText(angle);
                 mButtonClicked = view;
                 UDPSenderThread mUDPSender = new UDPSenderThread();
                 mUDPSender.start();
@@ -250,33 +240,48 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             }
         });
 
-        btIpSetting = findViewById(R.id.btIpSetting);
-        btIpSetting.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view){
-                String getString = etIpAddress.getText().toString();
-                if(getString.length() != 0){
-                    naviIpAddress = getString;
-                    Toast.makeText(MainActivity.this, naviIpAddress + " を送信先IPアドレスに設定しました", Toast.LENGTH_SHORT).show();
-                }else {
-                    Toast.makeText(MainActivity.this, "IPアドレスが入力されていません", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+//        btIpSetting = findViewById(R.id.btIpSetting);
+//        btIpSetting.setOnClickListener(new View.OnClickListener(){
+//            @Override
+//            public void onClick(View view){
+//                String getString = etIpAddress.getText().toString();
+//                if(getString.length() != 0){
+//                    peerIpAddress = getString;
+//                    Toast.makeText(MainActivity.this, peerIpAddress + " を送信先IPアドレスに設定しました", Toast.LENGTH_SHORT).show();
+//                }else {
+//                    Toast.makeText(MainActivity.this, "IPアドレスが入力されていません", Toast.LENGTH_SHORT).show();
+//                }
+//            }
+//        });
+//
+//        btPortSetting = findViewById(R.id.btPortSetting);
+//        btPortSetting.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                String getString = etPortNumber.getText().toString();
+//                if(getString.length() != 0){
+//                    peerPortNumber = getString;
+//                    Toast.makeText(MainActivity.this, peerPortNumber + " を送信先ポート番号に設定しました", Toast.LENGTH_SHORT).show();
+//                }else {
+//                    Toast.makeText(MainActivity.this, "ポート番号が入力されていません", Toast.LENGTH_SHORT).show();
+//                }
+//            }
+//        });
+//
+    }
 
-        btPortSetting = findViewById(R.id.btPortSetting);
-        btPortSetting.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String getString = etPortNumber.getText().toString();
-                if(getString.length() != 0){
-                    naviPortNumber = getString;
-                    Toast.makeText(MainActivity.this, naviPortNumber + " を送信先ポート番号に設定しました", Toast.LENGTH_SHORT).show();
-                }else {
-                    Toast.makeText(MainActivity.this, "ポート番号が入力されていません", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+    @Override
+    protected void onResume() {
+        Log.d("MainActivity", "onResume()");
+        super.onResume();
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
+            ActivityCompat.requestPermissions(MainActivity.this, permissions, 1000);
+            return;
+        }
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
 
         mHandler = new Handler();
 
@@ -287,21 +292,36 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         mWifiStatusUpdateThread.start();
     }
 
+    @Override
+    protected void onPause() {
+        Log.d("MainActivity", "onPause()");
+//        locationManager.removeUpdates(this);
+        super.onPause();
+    }
+
+    @Override
+    public void onRestart() {
+        Log.d("MainActivity", "onRestart()");
+        tvPortNumber.setText(globals.getMyPortNumber());
+        commPort = Integer.parseInt(globals.getMyPortNumber());
+        super.onRestart();
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d("MainActivity", "onDestroy()");
+        locationManager.removeUpdates(this);
+        mUDPReceiver.onStop();
+        mWifiStatusUpdateThread.onStop();
+        super.onDestroy();
+    }
+
     private static String getWifiIPAddress(Context context) {
         WifiManager manager = (WifiManager)context.getSystemService(WIFI_SERVICE);
         WifiInfo info = manager.getConnectionInfo();
         int ipAddr = info.getIpAddress();
         String ipString = String.format("%d.%d.%d.%d",
                 (ipAddr>>0)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff, (ipAddr>>24)&0xff);
-        return ipString;
-    }
-
-    private static String getWifiIPAddress3octet(Context context) {
-        WifiManager manager = (WifiManager)context.getSystemService(WIFI_SERVICE);
-        WifiInfo info = manager.getConnectionInfo();
-        int ipAddr = info.getIpAddress();
-        String ipString = String.format("%d.%d.%d.",
-                (ipAddr>>0)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff);
         return ipString;
     }
 
@@ -317,19 +337,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         DatagramSocket mDatagramRecvSocket= null;
         boolean mIsArive= false;
-        DatagramPacket receivePacket = null;
-        byte[] receiveBuffer = null;
 
         Map<String, String> receiveMap = new HashMap<>();
 
         public UDPReceiverThread() {
             super();
-            commPort = Integer.parseInt(globals.getPortNumber());
-            Log.d(TAG, "Globalsポート番号:"+ commPort);
             // ソケット生成
+            commPort = Integer.parseInt(globals.getMyPortNumber());
+            Log.d(TAG, "Globalsポート番号:"+ commPort);
             try {
-                mDatagramRecvSocket= new DatagramSocket(commPort);
-            }catch( Exception e ) {
+                mDatagramRecvSocket = new DatagramSocket(null);
+                mDatagramRecvSocket.setReuseAddress(true);
+                mDatagramRecvSocket.setBroadcast(true);
+                mDatagramRecvSocket.bind(new InetSocketAddress(commPort));
+            } catch (SocketException e) {
                 e.printStackTrace();
             }
 
@@ -352,17 +373,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         // 受信用スレッドのメイン関数
         @Override
         public void run() {
-            // UDPパケット生成（最初に一度だけ生成して使いまわし）
-            receiveBuffer = new byte[1024];
-            receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
-
             // スレッドループ開始
             Log.d(TAG,"In run(): thread start.");
+            // UDPパケット生成（最初に一度だけ生成して使いまわし）
+            byte[] receiveBuffer = new byte[1024];
+            DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+
             try {
                 while (mIsArive) {
                     // UDPパケット受信
                     mDatagramRecvSocket.receive(receivePacket);
-
                     try {
                         ByteArrayInputStream bis = new ByteArrayInputStream(receivePacket.getData(), 0, receivePacket.getLength());
                         ObjectInput in = new ObjectInputStream(bis);
@@ -396,8 +416,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 mDatagramRecvSocket.close();
                 mDatagramRecvSocket= null;
             }
-            receivePacket= null;
-            receiveBuffer= null;
         }
     }
 
@@ -470,7 +488,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             map.put("dist", dist);
             map.put("angle", angle);
             try {
-                UDPObjectTransfer.send(map, naviIpAddress, Integer.parseInt(naviPortNumber));
+                Log.d(TAG,"Peer's IP Address: " + globals.getPeerIPAddress());
+                UDPObjectTransfer.send(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -528,7 +547,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     Map<String, String> map = new HashMap<>(); // 適当なデータを用意
                     map.put("dist", dist);
                     map.put("angle", angle);
-                    UDPObjectTransfer.send(map, naviIpAddress, Integer.parseInt(naviPortNumber));
+                    UDPObjectTransfer.send(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
                     if(!reverse) {
                         if (cnt != 60) {
                             cnt += 10;
@@ -567,36 +586,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             });
             Log.d(TAG,"In run(): thread end.");
         }
-    }
-
-    @Override
-    protected void onResume() {
-        Log.d("MainActivity", "onResume()");
-        super.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        Log.d("MainActivity", "onPause()");
-//        locationManager.removeUpdates(this);
-        super.onPause();
-    }
-
-    @Override
-    public void onRestart() {
-        Log.d("MainActivity", "onRestart()");
-        tvPortNumber.setText(globals.getPortNumber());
-        commPort = Integer.parseInt(globals.getPortNumber());
-        super.onRestart();
-    }
-
-    @Override
-    public void onDestroy() {
-        Log.d("MainActivity", "onDestroy()");
-        locationManager.removeUpdates(this);
-        mUDPReceiver.onStop();
-        mWifiStatusUpdateThread.onStop();
-        super.onDestroy();
     }
 
     @Override

@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000"
-    android:orientation="horizontal"
-    tools:context=".MainActivity">
+    android:orientation="horizontal">
 
     <FrameLayout
         android:layout_width="wrap_content"
@@ -96,150 +94,330 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="#ffffff"
         android:fadeScrollbars="false"
         android:scrollbars="horizontal">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginLeft="8dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:background="#000000"
             android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="My Position:"
+                android:textSize="12sp"
+                android:textColor="@android:color/background_light" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="start"
+                android:layout_marginLeft="10dp"
                 android:orientation="vertical">
 
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Latitude"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/background_light"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true">
+                            <requestFocus />
+                        </TextView>
+
+                        <TextView
+                            android:id="@+id/tvLatitude"
+                            android:layout_width="130dp"
+                            android:layout_height="wrap_content"
+                            android:background="@android:color/background_light"
+                            android:text=""
+                            android:textSize="20sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="5dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Longitude"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/background_light" />
+
+                        <TextView
+                            android:id="@+id/tvLongitude"
+                            android:layout_width="130dp"
+                            android:layout_height="wrap_content"
+                            android:background="@android:color/background_light"
+                            android:text=""
+                            android:textSize="20sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Provider"
+                        android:textSize="12sp"
+                        android:textColor="@android:color/background_light" />
+
+                    <TextView
+                        android:id="@+id/tvProvider"
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:background="@android:color/background_light"
+                        android:text=""
+                        android:textSize="20sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btMeasStart"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Meas Start" />
+
+                    <Button
+                        android:id="@+id/btMeasStop"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Meas Stop" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="top">
+
                 <TextView
-                    android:layout_width="160dp"
+                    android:layout_width="100dp"
                     android:layout_height="wrap_content"
-                    android:text="Navi SSID:"
+                    android:text="My SSID:"
                     android:textColor="#cccccc"
-                    android:textSize="20sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvSSID"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
                     android:text=""
                     android:textColor="#cccccc"
-                    android:textSize="20sp" />
+                    android:textSize="12sp"/>
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="start"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:gravity="top">
 
                 <TextView
-                    android:layout_width="160dp"
+                    android:layout_width="100dp"
                     android:layout_height="wrap_content"
-                    android:text="Navi IP Address:"
+                    android:text="My IP Address:"
                     android:textColor="#cccccc"
-                    android:textSize="20sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvIpAddress"
-                    android:layout_width="150dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text=""
                     android:textColor="#cccccc"
-                    android:textSize="20sp" />
+                    android:textSize="12sp"/>
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="start"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:gravity="top">
 
                 <TextView
-                    android:layout_width="160dp"
+                    android:layout_width="100dp"
                     android:layout_height="wrap_content"
-                    android:text="Port Number:"
+                    android:text="My Port Number:"
                     android:textColor="#cccccc"
-                    android:textSize="20sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvPortNumber"
-                    android:layout_width="150dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text=""
                     android:textColor="#cccccc"
-                    android:textSize="20sp" />
-
+                    android:textSize="12sp"/>
             </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Send Test:"
+                android:textSize="12sp"
+                android:textColor="@android:color/background_light" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Distance[m]"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/background_light" />
+
+                        <TextView
+                            android:id="@+id/tvSendDist"
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:background="@android:color/background_light"
+                            android:text=""
+                            android:textSize="20sp" />
+
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="10dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Angle[°]"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/background_light" />
+
+                        <TextView
+                            android:id="@+id/tvSendAngle"
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:background="@android:color/background_light"
+                            android:text=""
+                            android:textSize="20sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btSendDemo1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="DEMO1" />
+
+                    <Button
+                        android:id="@+id/btSendDemo2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="DEMO2" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <Button
+                        android:id="@+id/btContStart"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="C.Start" />
+
+                    <Button
+                        android:id="@+id/btContStop"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="C.Stop" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Self Demo:"
+                android:textSize="12sp"
+                android:textColor="@android:color/background_light" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
                 android:orientation="horizontal">
 
                 <Button
                     android:id="@+id/btDemo1"
                     android:layout_width="70dp"
                     android:layout_height="wrap_content"
-                    android:text="@string/bt_demo1"
-                    android:textSize="10sp" />
+                    android:textSize="10sp"
+                    android:text="@string/bt_demo1"/>
 
                 <Button
                     android:id="@+id/btDemo2"
                     android:layout_width="70dp"
                     android:layout_height="wrap_content"
-                    android:text="@string/bt_demo2"
-                    android:textSize="10sp" />
+                    android:textSize="10sp"
+                    android:text="@string/bt_demo2"/>
 
                 <Button
                     android:id="@+id/btDemo3"
                     android:layout_width="70dp"
                     android:layout_height="wrap_content"
-                    android:text="@string/bt_demo3"
-                    android:textSize="10sp" />
-
+                    android:textSize="10sp"
+                    android:text="@string/bt_demo3"/>
                 <Button
                     android:id="@+id/btReset"
                     android:layout_width="70dp"
                     android:layout_height="wrap_content"
-                    android:text="@string/bt_reset"
-                    android:textSize="10sp" />
+                    android:textSize="10sp"
+                    android:text="@string/bt_reset"/>
             </LinearLayout>
-
-            <!--<LinearLayout-->
-            <!--android:id="@+id/linearLayoutButton2"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_marginLeft="8dp"-->
-            <!--android:orientation="horizontal">-->
-            <!--<Button-->
-            <!--android:id="@+id/btShowIp"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:text="@string/bt_ShowIp"-->
-            <!--android:textSize="10sp" />-->
-
-            <!--<Button-->
-            <!--android:id="@+id/btShowPortNo"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:text="@string/bt_ShowPortNo"-->
-            <!--android:textSize="10sp" />-->
-            <!--<Button-->
-            <!--android:id="@+id/btRcvStart"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:textSize="10sp"-->
-            <!--android:text="@string/bt_send"/>-->
-
-            <!--<Button-->
-            <!--android:id="@+id/btRcvStop"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:textSize="10sp"-->
-            <!--android:text="@string/bt_receive"/>-->
-            <!--</LinearLayout>-->
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

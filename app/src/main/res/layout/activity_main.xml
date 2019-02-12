@@ -106,9 +106,17 @@
             android:background="#000000"
             android:orientation="vertical">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="My Position:"
+                android:textSize="12sp"
+                android:textColor="@android:color/background_light" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
                 android:orientation="vertical">
 
                 <LinearLayout
@@ -134,11 +142,11 @@
 
                         <TextView
                             android:id="@+id/tvLatitude"
-                            android:layout_width="130dp"
+                            android:layout_width="100dp"
                             android:layout_height="wrap_content"
                             android:background="@android:color/background_light"
                             android:text=""
-                            android:textSize="20sp" />
+                            android:textSize="15sp" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -156,11 +164,11 @@
 
                         <TextView
                             android:id="@+id/tvLongitude"
-                            android:layout_width="130dp"
+                            android:layout_width="100dp"
                             android:layout_height="wrap_content"
                             android:background="@android:color/background_light"
                             android:text=""
-                            android:textSize="20sp" />
+                            android:textSize="15sp" />
                     </LinearLayout>
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -177,11 +185,11 @@
 
                         <TextView
                             android:id="@+id/tvProvider"
-                            android:layout_width="130dp"
+                            android:layout_width="100dp"
                             android:layout_height="wrap_content"
                             android:background="@android:color/background_light"
                             android:text=""
-                            android:textSize="20sp" />
+                            android:textSize="15sp" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -207,6 +215,165 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="top">
+
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="My SSID:"
+                    android:textColor="#cccccc"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tvSSID"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#cccccc"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="top">
+
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="My IP Address:"
+                    android:textColor="#cccccc"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tvIpAddress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#cccccc"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="top">
+
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="My Port Number:"
+                    android:textColor="#cccccc"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tvPortNumber"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#cccccc"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+
+            <!--<LinearLayout-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_marginTop="10dp">-->
+
+                <!--<LinearLayout-->
+                    <!--android:layout_width="wrap_content"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:orientation="vertical">-->
+
+                    <!--<TextView-->
+                        <!--android:layout_width="wrap_content"-->
+                        <!--android:layout_height="wrap_content"-->
+                        <!--android:text="PeerIPSetting"-->
+                        <!--android:textColor="@android:color/background_light" />-->
+
+                    <!--<EditText-->
+                        <!--android:id="@+id/etIpAddress"-->
+                        <!--android:layout_width="150dp"-->
+                        <!--android:layout_height="wrap_content"-->
+                        <!--android:background="@android:color/background_light"-->
+                        <!--android:ems="10"-->
+                        <!--android:hint="IPAddress"-->
+                        <!--android:inputType="textEmailAddress" />-->
+
+                <!--</LinearLayout>-->
+
+                <!--<LinearLayout-->
+                    <!--android:layout_width="wrap_content"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:gravity="bottom">-->
+
+                    <!--<Button-->
+                        <!--android:id="@+id/btIpSetting"-->
+                        <!--android:layout_width="wrap_content"-->
+                        <!--android:layout_height="wrap_content"-->
+                        <!--android:text="IP Setting" />-->
+
+                <!--</LinearLayout>-->
+            <!--</LinearLayout>-->
+
+            <!--<LinearLayout-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_marginTop="10dp"-->
+                <!--android:orientation="horizontal">-->
+
+                <!--<LinearLayout-->
+                    <!--android:layout_width="wrap_content"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:orientation="vertical">-->
+
+                    <!--<TextView-->
+                        <!--android:layout_width="wrap_content"-->
+                        <!--android:layout_height="wrap_content"-->
+                        <!--android:text="PeerPortSetting"-->
+                        <!--android:textColor="@android:color/background_light" />-->
+
+                    <!--<EditText-->
+                        <!--android:id="@+id/etPortNumber"-->
+                        <!--android:layout_width="150dp"-->
+                        <!--android:layout_height="wrap_content"-->
+                        <!--android:background="@android:color/background_light"-->
+                        <!--android:ems="10"-->
+                        <!--android:hint="PortNumber"-->
+                        <!--android:inputType="number"-->
+                        <!--android:text="" />-->
+
+                <!--</LinearLayout>-->
+
+                <!--<LinearLayout-->
+                    <!--android:layout_width="wrap_content"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:gravity="bottom"-->
+                    <!--android:orientation="vertical">-->
+
+                    <!--<Button-->
+                        <!--android:id="@+id/btPortSetting"-->
+                        <!--android:layout_width="wrap_content"-->
+                        <!--android:layout_height="wrap_content"-->
+                        <!--android:text="Port Setting" />-->
+
+                <!--</LinearLayout>-->
+            <!--</LinearLayout>-->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Send Test:"
+                android:textSize="12sp"
+                android:textColor="@android:color/background_light" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
                 android:orientation="vertical">
 
                 <LinearLayout
@@ -292,160 +459,17 @@
 
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="PeerIPSetting"
-                        android:textColor="@android:color/background_light" />
-
-                    <EditText
-                        android:id="@+id/etIpAddress"
-                        android:layout_width="150dp"
-                        android:layout_height="wrap_content"
-                        android:background="@android:color/background_light"
-                        android:ems="10"
-                        android:hint="IPAddress"
-                        android:inputType="textEmailAddress" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="bottom">
-
-                    <Button
-                        android:id="@+id/btIpSetting"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="IP Setting" />
-
-                </LinearLayout>
-            </LinearLayout>
+                android:text="Self Demo:"
+                android:textSize="12sp"
+                android:textColor="@android:color/background_light" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="horizontal">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="PeerPortSetting"
-                        android:textColor="@android:color/background_light" />
-
-                    <EditText
-                        android:id="@+id/etPortNumber"
-                        android:layout_width="150dp"
-                        android:layout_height="wrap_content"
-                        android:background="@android:color/background_light"
-                        android:ems="10"
-                        android:hint="PortNumber"
-                        android:inputType="number"
-                        android:text="" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="bottom"
-                    android:orientation="vertical">
-
-                    <Button
-                        android:id="@+id/btPortSetting"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Port Setting" />
-
-                </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="top">
-
-                <TextView
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:text="Navi SSID:"
-                    android:textColor="#cccccc"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/tvSSID"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="#cccccc"
-                    android:textSize="12sp"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="top">
-
-                <TextView
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:text="Navi IP Address:"
-                    android:textColor="#cccccc"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/tvIpAddress"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="#cccccc"
-                    android:textSize="12sp"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="top">
-
-                <TextView
-                    android:layout_width="150dp"
-                    android:layout_height="wrap_content"
-                    android:text="Port Number:"
-                    android:textColor="#cccccc"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/tvPortNumber"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="#cccccc"
-                    android:textSize="12sp"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
                 android:orientation="horizontal">
 
                 <Button
