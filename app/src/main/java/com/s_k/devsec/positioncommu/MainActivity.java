@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -37,6 +38,7 @@ import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TransferQueue;
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
 
@@ -59,8 +61,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     LocationManager locationManager;
     double latitude = 0; //緯度フィールド
     double longitude = 0; //経度フィールド
+    static double EARTHRADIUS = 6378137;
+
     String provider = "";
     boolean isMeasStart = true;
+
+    double fixedLatitude = 0;
+    double fixedLongitude = 0;
+    double initAngle = 0;
+
 
     String dist = "";
     String angle = "";
@@ -74,6 +83,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     TextView tvProvider;
     TextView tvMeasCount;
     TextView tvMeasInterval;
+    TextView tvFixedLatitude;
+    TextView tvFixedLongitude;
+    Button btFixed;
 
     TextView tvPeerLatitude;
     TextView tvPeerLongitude;
@@ -96,6 +108,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     int receiveCount = 0;
     long lastReceiveTime = 0;
 
+    boolean isFixed = false;
+    boolean isFirstReceive = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d("MainActivity", "onCreate()");
@@ -103,6 +118,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         setContentView(R.layout.activity_main);
 
         globals = (Globals) this.getApplication();
+        WifiManager manager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+        WifiInfo info = manager.getConnectionInfo();
+        int ipAddr = info.getIpAddress();
+        String ipString = String.format("%d.%d.%d.1",
+                (ipAddr>>0)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff);
+        Log.d("MainActivity", "peer's address is:" + ipString);
+        globals.setPeerIPAddress(ipString);
 
         tvDistance = findViewById(R.id.tvDistance);
         tvDistance.setText("0");
@@ -133,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         button1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                double angle = 30;
+                double angle = 80;
                 customView.showCanvas(false, angle);
                 Log.d("MainActivity", "bt_number=1");
                 tvDistance.setText("10");
@@ -180,6 +202,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         tvProvider = findViewById(R.id.tvProvider);
         tvMeasCount = findViewById(R.id.tvMeasCount);
         tvMeasInterval = findViewById(R.id.tvMeasInterval);
+        tvFixedLatitude = findViewById(R.id.tvFixedLatitude);
+        tvFixedLongitude = findViewById(R.id.tvFixedLongitude);
 
         tvPeerLatitude = findViewById(R.id.tvPeerLatitude);
         tvPeerLongitude = findViewById(R.id.tvPeerLongitude);
@@ -213,6 +237,26 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 //                Toast.makeText(MainActivity.this, "位置情報取得停止", Toast.LENGTH_SHORT).show();
 //            }
 //        });
+
+        btFixed = findViewById(R.id.btFixed);
+        btFixed.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                fixedLatitude = latitude;
+                fixedLongitude = longitude;
+                tvFixedLatitude.setBackgroundColor(Color.argb(255,255,255,255));
+                tvFixedLatitude.setText(Double.toString(fixedLatitude));
+                tvFixedLongitude.setBackgroundColor(Color.argb(255,255,255,255));
+                tvFixedLongitude.setText(Double.toString(fixedLongitude));
+                angle = "0";
+                tvAngle.setText(angle);
+                isFixed = true;
+                isFirstReceive = true;
+                CustomView customView = findViewById(R.id.customView);
+                customView.showCanvas(false, Double.parseDouble(angle));
+                Log.d("btFixed", "Canvas refreshed");
+            }
+        });
 
         btSendDemo1 = findViewById(R.id.btSendDemo1);
         btSendDemo1.setOnClickListener(new View.OnClickListener(){
@@ -336,7 +380,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         private static final String TAG="UDPTestReceiverThread";
 
         DatagramSocket mDatagramRecvSocket= null;
-        boolean mIsArive= false;
+        boolean mIsArive= false; //スレッド生存フラグ
 
         Map<String, String> receiveMap = new HashMap<>();
 
@@ -375,23 +419,22 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         public void run() {
             // スレッドループ開始
             Log.d(TAG,"In run(): thread start.");
-            // UDPパケット生成（最初に一度だけ生成して使いまわし）
+            // UDPパケットの受け皿生成（最初に一度だけ生成して使いまわし）
             byte[] receiveBuffer = new byte[1024];
             DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
 
             try {
                 while (mIsArive) {
-                    // UDPパケット受信
-                    mDatagramRecvSocket.receive(receivePacket);
+                    mDatagramRecvSocket.receive(receivePacket); //UDPパケット受信
                     try {
-                        ByteArrayInputStream bis = new ByteArrayInputStream(receivePacket.getData(), 0, receivePacket.getLength());
+                        ByteArrayInputStream bis = new ByteArrayInputStream(receivePacket.getData(), 0, receivePacket.getLength()); //バイトストリームから入力
                         ObjectInput in = new ObjectInputStream(bis);
                         receiveMap = (Map<String, String>)in.readObject();
                     }catch (Exception ex) {
                     }
                     Log.d(TAG,"In run(): packet received :" + receiveMap);
 
-                    if(receiveMap.containsKey("dist")) {
+                    if(receiveMap.containsKey("dist")) { //テストdist,angleデータを受け取ったとき
                         final String dist = receiveMap.get("dist");
                         Log.d(TAG,"dist: " + dist);
                         final String angle = receiveMap.get("angle");
@@ -403,27 +446,25 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                 tvAngle.setText(angle);
                                 CustomView customView = findViewById(R.id.customView);
                                 customView.showCanvas(false, Double.parseDouble(angle));
-                                Log.d(TAG, "In run(): Canvas refleshed");
+                                Log.d(TAG, "In run(): Canvas refreshed");
                             }
                         });
-                    }else if(receiveMap.containsKey("sendLatitude")) {
+                    }else if(receiveMap.containsKey("sendLatitude")) { //緯度経度を受け取ったとき
                         final String sendLatitude = receiveMap.get("sendLatitude");
                         Log.d(TAG,"sendLatitude: " + sendLatitude);
                         final String sendLongitude = receiveMap.get("sendLongitude");
                         Log.d(TAG,"sendLongitude: " + sendLongitude);
                         final String sendProvieder = receiveMap.get("sendProvider");
                         Log.d(TAG,"sendProvieder: " + sendLongitude);
+
                         receiveCount++;
-                        mHandler.post(new Runnable() {
+                        mHandler.post(new Runnable() { //画面更新
                             @Override
                             public void run() {
                                 tvPeerLatitude.setText(sendLatitude);
                                 tvPeerLongitude.setText(sendLongitude);
                                 tvPeerProvider.setText(sendProvieder);
                                 tvReceiveCount.setText(String.valueOf(receiveCount));
-//                                CustomView customView = findViewById(R.id.customView);
-//                                customView.showCanvas(false, Double.parseDouble(angle));
-//                                Log.d(TAG, "In run(): Canvas refleshed");
                             }
                         });
                         if(lastReceiveTime ==0){
@@ -444,6 +485,52 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                 }
                             });
                         }
+
+                        if(isFixed){
+                            //自己緯度経度、受信緯度経度から距離、角度算出
+                            //常に方位角は計算が必要なので、⊿x、⊿yは毎回求める
+                            double dLatitude = (fixedLatitude - Double.parseDouble(sendLatitude)) * (Math.PI / 180); //緯度変位[rad]
+                            double dLongitude = (fixedLongitude - Double.parseDouble(sendLongitude)) * (Math.PI / 180); //経度変位[rad]
+                            double dy = EARTHRADIUS * dLatitude; //緯度方向変位距離
+                            double dx = EARTHRADIUS * Math.cos(fixedLatitude) * dLongitude; //経度方向変位距離
+                            long length = Math.round(Math.sqrt((dx*dx + dy*dy)));
+                            double angle2 = Math.atan((dy/dx)) * 180 / Math.PI;
+                            dist = String.valueOf(length);
+
+                            Log.d(TAG, "isFirstReceive is:" + isFirstReceive);
+                            if(isFirstReceive) {
+                                initAngle = angle2;
+                                Log.d(TAG, "initAngle is:" + initAngle);
+                                mHandler.post(new Runnable() { //画面更新
+                                    @Override
+                                    public void run() {
+                                        tvFixedLatitude.setBackgroundColor(Color.argb(255,255,250,205));
+                                        tvFixedLongitude.setBackgroundColor(Color.argb(255,255,250,205));
+                                        tvDistance.setText(dist);
+                                        tvAngle.setText(angle);
+                                        CustomView customView = findViewById(R.id.customView);
+                                        customView.showCanvas(false, Double.parseDouble(angle));
+                                        Log.d(TAG, "In run(): Canvas refreshed");
+                                    }
+                                });
+                                isFirstReceive = false;
+                            } else {
+                                angle2 = - (initAngle - angle2);
+                                angle = String.valueOf(Math.round(angle2));
+                                final double canvasAngle = angle2;
+                                mHandler.post(new Runnable() { //画面更新
+                                    @Override
+                                    public void run() {
+                                        tvDistance.setText(dist);
+                                        tvAngle.setText(angle);
+                                        CustomView customView = findViewById(R.id.customView);
+                                        customView.showCanvas(false, canvasAngle);
+                                        Log.d(TAG, "In run(): Canvas refreshed");
+                                    }
+                                });
+                            }
+                        }
+
                     }
 
                 }
@@ -459,49 +546,34 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
-    class WifiStatusUpdateThread extends Thread {
-        private static final String TAG="WifiStatusUpdateThread";
-        boolean mIsArive= false;
+    class UDPMeasSenderThread extends Thread{
+        private static final String TAG="UDPMeasSenderThread";
 
-        public WifiStatusUpdateThread() {
+        private UDPMeasSenderThread(){
             super();
         }
 
         @Override
         public void start() {
-            mIsArive= true;
-            Log.d(TAG,"mIsArive status:"+ mIsArive);
             super.start();
         }
 
-        public void onStop() {
-            Log.d(TAG,"onStop()");
-            mIsArive= false;
-            Log.d(TAG,"mIsArive status:"+ mIsArive);
-        }
-
-//        int cnt = 0;
-
+        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
         @Override
-        public void run() {
+        public void run(){
             Log.d(TAG,"In run(): thread start.");
-            while (mIsArive) {
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-//                        tvSSID.setText(String.valueOf(cnt));
-//                        tvIpAddress.setText(String.valueOf(cnt));
-//                        cnt++;
-                        tvSSID.setText(getWifiSSID(MainActivity.this));
-                        tvIpAddress.setText(getWifiIPAddress(MainActivity.this));
-                        Log.d(TAG, "run(): mHandler.post() executed.");
-                    }
-                });
+            try {
+                Log.d(TAG,"Peer's IP Address: " + globals.getPeerIPAddress());
+                String sendLatitude = String.valueOf(latitude);
+                String sendLongitude = String.valueOf(longitude);
+                String sendProvider = provider;
+                Map<String, String> map = new HashMap<>();
+                map.put("sendLatitude", sendLatitude);
+                map.put("sendLongitude", sendLongitude);
+                map.put("sendProvider", sendProvider);
+                UDPObjectTransfer.send(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
+            } catch (IOException e) {
+                e.printStackTrace();
             }
             Log.d(TAG,"In run(): thread end.");
         }
@@ -550,39 +622,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             });
             Log.d(TAG,"In run(): thread end.");
 
-        }
-    }
-
-    class UDPMeasSenderThread extends Thread{
-        private static final String TAG="UDPMeasSenderThread";
-
-        private UDPMeasSenderThread(){
-            super();
-        }
-
-        @Override
-        public void start() {
-            super.start();
-        }
-
-        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-        @Override
-        public void run(){
-            Log.d(TAG,"In run(): thread start.");
-            try {
-                Log.d(TAG,"Peer's IP Address: " + globals.getPeerIPAddress());
-                String sendLatitude = String.valueOf(latitude);
-                String sendLongitude = String.valueOf(longitude);
-                String sendProvider = provider;
-                Map<String, String> map = new HashMap<>();
-                map.put("sendLatitude", sendLatitude);
-                map.put("sendLongitude", sendLongitude);
-                map.put("sendProvider", sendProvider);
-                UDPObjectTransfer.send(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            Log.d(TAG,"In run(): thread end.");
         }
     }
 
@@ -657,6 +696,54 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     Toast.makeText(MainActivity.this, "連続送信スレッド停止", Toast.LENGTH_SHORT).show();
                 }
             });
+            Log.d(TAG,"In run(): thread end.");
+        }
+    }
+
+    class WifiStatusUpdateThread extends Thread {
+        private static final String TAG="WifiStatusUpdateThread";
+        boolean mIsArive= false;
+
+        public WifiStatusUpdateThread() {
+            super();
+        }
+
+        @Override
+        public void start() {
+            mIsArive= true;
+            Log.d(TAG,"mIsArive status:"+ mIsArive);
+            super.start();
+        }
+
+        public void onStop() {
+            Log.d(TAG,"onStop()");
+            mIsArive= false;
+            Log.d(TAG,"mIsArive status:"+ mIsArive);
+        }
+
+//        int cnt = 0;
+
+        @Override
+        public void run() {
+            Log.d(TAG,"In run(): thread start.");
+            while (mIsArive) {
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+//                        tvSSID.setText(String.valueOf(cnt));
+//                        tvIpAddress.setText(String.valueOf(cnt));
+//                        cnt++;
+                        tvSSID.setText(getWifiSSID(MainActivity.this));
+                        tvIpAddress.setText(getWifiIPAddress(MainActivity.this));
+                        Log.d(TAG, "run(): mHandler.post() executed.");
+                    }
+                });
+            }
             Log.d(TAG,"In run(): thread end.");
         }
     }
