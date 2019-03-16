@@ -51,6 +51,15 @@ public class CustomView extends View {
 
         //背景
         canvas.drawColor(Color.argb(255, 255, 255, 255));
+        Log.d("CustomView", "angle is:" + angle);
+        if(angle > 60 || angle < -60){
+            canvas.drawColor(Color.argb(255, 255, 182, 191));
+//            canvas.drawColor(0xffb6c1);
+            paint.setColor(Color.BLACK);
+            paint.setStrokeWidth(5);
+            paint.setTextSize(60);
+            canvas.drawText("Range Over", customViewWidth * (float)0.05, customViewWidth * (float)0.9, paint);
+        }
 
         //自分座標マーク
         paint.setColor(Color.RED);
@@ -92,10 +101,10 @@ public class CustomView extends View {
         rectF = new RectF(yourXPosition - (float)radius, yourYPosition - (float)radius, yourXPosition + (float)radius, yourYPosition + (float)radius);
         canvas.drawArc(rectF, 210, 120, false, paint); //sweepAngleは､startAngle位置から動かす角度のこと｡終端の角度ではない!
 
-        if(viewflg){
+        if(viewflg){ //初回描画時は自分の真向かいにターゲット座標をマーク
             targetXPosition = yourXPosition;
             targetYPosition = yourYPosition - (float)radius;
-        }else{
+        }else{ //angle更新毎に描画する際の処理
             Log.d("CustomView", "radius:"+ radius);
             Log.d("CustomView", "angle:"+ angle);
             rsin_theta = (float)(radius * Math.sin(Math.toRadians(angle)));
@@ -106,41 +115,42 @@ public class CustomView extends View {
             targetYPosition = yourYPosition - rcos_theta;
         }
 
-        //ターゲット座標マーク
-        paint.setColor(Color.BLUE);
-        paint.setStrokeWidth(10);
-        paint.setStyle(Paint.Style.STROKE);
-        canvas.drawCircle(targetXPosition, targetYPosition,10, paint);
-        //ターゲット座標文字
-        paint.setColor(Color.BLACK);
-        paint.setStrokeWidth(5);
-        paint.setTextSize(50);
-        canvas.drawText("Target", targetXPosition - 70, targetYPosition - 50, paint);
+        if(angle <= 60 && angle >= -60){
+            //ターゲット座標マーク
+            paint.setColor(Color.BLUE);
+            paint.setStrokeWidth(10);
+            paint.setStyle(Paint.Style.STROKE);
+            canvas.drawCircle(targetXPosition, targetYPosition, 10, paint);
+            //ターゲット座標文字
+            paint.setColor(Color.BLACK);
+            paint.setStrokeWidth(5);
+            paint.setTextSize(50);
+            canvas.drawText("Target", targetXPosition - 70, targetYPosition - 50, paint);
 
-        //ターゲットまでの線表示
-        paint.setStrokeWidth(1);
-        paint.setStyle(Paint.Style.STROKE);
+            //ターゲットまでの線表示
+            paint.setStrokeWidth(1);
+            paint.setStyle(Paint.Style.STROKE);
 //        paint.setPathEffect(new DashPathEffect(new float[]{2, 4},0));
-        path.rewind();
-        path.moveTo(yourXPosition, yourYPosition);
-        path.lineTo(targetXPosition,targetYPosition);
-        canvas.drawPath(path, paint);
+            path.rewind();
+            path.moveTo(yourXPosition, yourYPosition);
+            path.lineTo(targetXPosition, targetYPosition);
+            canvas.drawPath(path, paint);
 
-        //進行方向との角度円弧
-        paint.setStrokeWidth(1);
-        paint.setStyle(Paint.Style.STROKE);
-        rectF = new RectF(yourXPosition - (float)radius/2, yourYPosition - (float)radius/2, yourXPosition + (float)radius/2, yourYPosition + (float)radius/2);
-        canvas.drawArc(rectF, 270, (float)angle, false, paint); //sweepAngleは､startAngle位置から動かす角度のこと｡終端の角度ではない!
+            //進行方向との角度円弧
+            paint.setStrokeWidth(1);
+            paint.setStyle(Paint.Style.STROKE);
+            rectF = new RectF(yourXPosition - (float) radius / 2, yourYPosition - (float) radius / 2, yourXPosition + (float) radius / 2, yourYPosition + (float) radius / 2);
+            canvas.drawArc(rectF, 270, (float) angle, false, paint); //sweepAngleは､startAngle位置から動かす角度のこと｡終端の角度ではない!
 
-        //θ表示
-        if(angle != 0){
-            rsin_theta = (float)(radius * Math.sin(Math.toRadians(angle/2)));
-            rcos_theta = (float)(radius * Math.cos(Math.toRadians(angle/2)));
-            targetXPosition = yourXPosition + rsin_theta;
-            targetYPosition = yourYPosition - rcos_theta;
-            paint.setStrokeWidth(3);
-            canvas.drawText("θ", yourXPosition + (targetXPosition - yourXPosition)/2 - 16, yourYPosition - (yourYPosition - targetYPosition)/2, paint);
+            //θ表示
+            if (angle != 0) {
+                rsin_theta = (float) (radius * Math.sin(Math.toRadians(angle / 2)));
+                rcos_theta = (float) (radius * Math.cos(Math.toRadians(angle / 2)));
+                targetXPosition = yourXPosition + rsin_theta;
+                targetYPosition = yourYPosition - rcos_theta;
+                paint.setStrokeWidth(3);
+                canvas.drawText("θ", yourXPosition + (targetXPosition - yourXPosition) / 2 - 16, yourYPosition - (yourYPosition - targetYPosition) / 2, paint);
+            }
         }
-
     }
 }
