@@ -348,6 +348,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         Log.d("MainActivity", "onRestart()");
         tvPortNumber.setText(globals.getMyPortNumber());
         commPort = Integer.parseInt(globals.getMyPortNumber());
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
+            ActivityCompat.requestPermissions(MainActivity.this, permissions, 1000);
+            return;
+        }
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
         super.onRestart();
     }
 
@@ -755,17 +762,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         customViewHeight = findViewById(R.id.customView).getHeight();
         Log.d("MainActivity", "CustomView幅:"+ customViewWidth);
         Log.d("MainActivity", "CustomView高:"+ customViewHeight);
-
         int orientation = getResources().getConfiguration().orientation;
         CustomView customView = findViewById(R.id.customView);
         ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams)customView.getLayoutParams();
 
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
             // 横向きの場合
-//            customViewWidth = customViewHeight;
-//            marginLayoutParams.width = customViewWidth;
-//            Log.d("MainActivity", "CustomView幅(修正):"+ customViewWidth);
-//            customView.setLayoutParams(marginLayoutParams);
+            Log.d("MainActivity", "onWindowFocusChanged():ORIENTATION_LANDSCAPE"+ customViewHeight);
             customViewHeight = customViewWidth;
             marginLayoutParams.height = customViewHeight;
             Log.d("MainActivity", "CustomView高(修正):"+ customViewHeight);
@@ -773,10 +776,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
 
         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+            Log.d("MainActivity", "onWindowFocusChanged():ORIENTATION_PORTRAIT"+ customViewHeight);
             // 縦向きの場合
-            customViewHeight = customViewWidth;
-            marginLayoutParams.height = customViewHeight;
-            Log.d("MainActivity", "CustomView高(修正):"+ customViewHeight);
             customView.setLayoutParams(marginLayoutParams);
         }
     }

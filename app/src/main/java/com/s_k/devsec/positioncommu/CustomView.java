@@ -36,10 +36,11 @@ public class CustomView extends View {
     protected void onDraw(Canvas canvas){
 
         float customViewWidth = MainActivity.customViewWidth;
+        float customViewHeight = MainActivity.customViewHeight;
         float yourXPosition = customViewWidth / 2;
-        float yourYPosition = customViewWidth * (float)0.8;
+        float yourYPosition = customViewHeight * (float)0.9;
         Log.d("CustomView", "yourYPosition:"+ yourYPosition);
-        double radius = customViewWidth * 0.4;
+        double radius = customViewHeight * 0.4;
 
         float targetXPosition;
         float targetYPosition;
@@ -58,7 +59,7 @@ public class CustomView extends View {
             paint.setColor(Color.BLACK);
             paint.setStrokeWidth(5);
             paint.setTextSize(60);
-            canvas.drawText("Range Over", customViewWidth * (float)0.05, customViewWidth * (float)0.9, paint);
+            canvas.drawText("Range Over", customViewWidth * (float)0.05, customViewHeight * (float)0.9, paint);
         }
 
         //自分座標マーク

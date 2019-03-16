@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000"
+    android:background="#ffffff"
     android:orientation="horizontal">
 
     <FrameLayout
@@ -38,7 +38,7 @@
 
                 <TextView
                     android:id="@+id/tvDistance"
-                    android:layout_width="100dp"
+                    android:layout_width="80dp"
                     android:layout_height="wrap_content"
                     android:background="#CCffffff"
                     android:gravity="end"
@@ -74,7 +74,7 @@
 
                 <TextView
                     android:id="@+id/tvAngle"
-                    android:layout_width="100dp"
+                    android:layout_width="80dp"
                     android:layout_height="wrap_content"
                     android:background="#CCffffff"
                     android:gravity="end"
@@ -97,21 +97,21 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#000"
+        android:background="#ffffff"
         android:fadeScrollbars="false"
-        android:scrollbars="horizontal"
+        android:scrollbars="vertical"
         android:layout_weight="0.5">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="#000000"
+            android:layout_marginRight="10dp"
             android:orientation="vertical">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="10dp"
                 android:orientation="vertical"
                 android:gravity="end">
 
@@ -119,6 +119,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
+                    android:layout_marginRight="10dp"
                     android:text="My Position:"
                     android:textSize="12sp"
                     android:textColor="@android:color/background_light" />
@@ -265,6 +266,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
+                    android:layout_marginRight="10dp"
                     android:text="Fixed My Position:"
                     android:textSize="12sp"
                     android:textColor="@android:color/background_light" />
@@ -350,7 +352,6 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="10dp"
                 android:orientation="vertical"
                 android:gravity="end">
 
@@ -358,6 +359,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
+                    android:layout_marginRight="10dp"
                     android:text="Peer's Position:"
                     android:textSize="12sp"
                     android:textColor="@android:color/background_light" />
@@ -504,24 +506,22 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30dp"
+                android:layout_marginRight="10dp"
                 android:text="My Information:"
                 android:textSize="12sp"
                 android:textColor="@android:color/background_light"
-                android:layout_marginRight="10dp"
                 android:layout_gravity="end"/>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="@android:color/white"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="10dp" />
+                android:layout_marginLeft="10dp"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginRight="10dp"
                 android:gravity="end">
 
                 <TextView
@@ -544,7 +544,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginRight="10dp"
                 android:gravity="end">
 
                 <TextView
@@ -567,7 +566,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginRight="10dp"
                 android:gravity="end">
 
                 <TextView
@@ -589,7 +587,6 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="10dp"
                 android:orientation="vertical"
                 android:gravity="end">
 
@@ -597,6 +594,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
+                    android:layout_marginRight="10dp"
                     android:text="Send Test:"
                     android:textSize="12sp"
                     android:textColor="@android:color/background_light" />
@@ -692,23 +690,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
+                android:layout_marginRight="10dp"
                 android:text="Self Demo:"
                 android:textSize="12sp"
                 android:textColor="@android:color/background_light"
-                android:layout_marginRight="10dp"
                 android:layout_gravity="end"/>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginLeft="10dp"
-                android:background="@android:color/white"
-                android:layout_marginRight="10dp" />
+                android:background="@android:color/white"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="10dp"
                 android:orientation="horizontal"
                 android:gravity="end">
 
