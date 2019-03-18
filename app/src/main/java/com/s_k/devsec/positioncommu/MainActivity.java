@@ -1,6 +1,7 @@
 package com.s_k.devsec.positioncommu;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -12,6 +13,7 @@ import android.location.LocationManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
@@ -27,18 +29,29 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.io.OutputStreamWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TransferQueue;
+
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
 
@@ -47,37 +60,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     TextView tvPortNumber;
     TextView tvSSID;
     TextView tvIpAddress;
-
-    static int customViewWidth;
-    static int customViewHeight;
-
-    Globals globals;
-    UDPTestReceiverThread mUDPTestReceiver = null;
-    WifiStatusUpdateThread mWifiStatusUpdateThread = null;
-    int commPort;
-
-    Handler mHandler;
-
-    LocationManager locationManager;
-    double latitude = 0; //緯度フィールド
-    double longitude = 0; //経度フィールド
-    static double EARTHRADIUS = 6378137;
-
-    String provider = "";
-    boolean isMeasStart = true;
-
-    double fixedLatitude = 0;
-    double fixedLongitude = 0;
-    double initAngle = 0;
-
-
-    String dist = "";
-    String angle = "";
-
-    View mButtonClicked;
-
-    UDPTestContSenderThread mUDPTestCSThread;
-
     TextView tvLatitude;
     TextView tvLongitude;
     TextView tvProvider;
@@ -85,31 +67,59 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     TextView tvMeasInterval;
     TextView tvFixedLatitude;
     TextView tvFixedLongitude;
-    Button btFixed;
-
     TextView tvPeerLatitude;
     TextView tvPeerLongitude;
     TextView tvPeerProvider;
     TextView tvReceiveCount;
     TextView tvReceiveInterval;
-
     TextView tvSendDist;
     TextView tvSendAngle;
-//    Button btMeasStart;
-//    Button btMeasStop;
+
+    Button btFixed;
     Button btSendDemo1;
     Button btSendDemo2;
     Button btContStart;
     Button btContStop;
+    Button btLogStart;
+    Button btLogStop;
 
+    View mButtonClicked;
+
+    static int customViewWidth;
+    static int customViewHeight;
+
+    Globals globals;
+    Handler mHandler;
+
+    UDPTestReceiverThread mUDPTestReceiver = null;
+    WifiStatusUpdateThread mWifiStatusUpdateThread = null;
+    UDPTestContSenderThread mUDPTestCSThread;
+
+    int commPort;
     int measCount = 0;
     long lastMeasTime =0;
-
     int receiveCount = 0;
     long lastReceiveTime = 0;
 
+    LocationManager locationManager;
+
+    double latitude = 0; //緯度フィールド
+    double longitude = 0; //経度フィールド
+    static double EARTHRADIUS = 6378137;
+    double fixedLatitude = 0;
+    double fixedLongitude = 0;
+    double initAngle = 0;
+
+    String provider = "";
+    String dist = "";
+    String angle = "";
+    String path = "";
+    String fileName = "";
+
+    boolean isMeasStart = true;
     boolean isFixed = false;
     boolean isFirstReceive = true;
+    boolean isFileSaving = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,76 +136,22 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         Log.d("MainActivity", "peer's address is:" + ipString);
         globals.setPeerIPAddress(ipString);
 
+        path = "/storage/1A80-DF3D" + File.separator + this.getPackageName();
+        Log.d("MainActivity", "external storage path is:" + path);
+
+        final CustomView customView = findViewById(R.id.customView);
+
         tvDistance = findViewById(R.id.tvDistance);
         tvDistance.setText("0");
         tvAngle = findViewById(R.id.tvAngle);
         tvAngle.setText("0");
+
         tvSSID = findViewById(R.id.tvSSID);
         tvSSID.setText(getWifiSSID(MainActivity.this));
         tvIpAddress = findViewById(R.id.tvIpAddress);
         tvIpAddress.setText(getWifiIPAddress(MainActivity.this));
         tvPortNumber = findViewById(R.id.tvPortNumber);
         tvPortNumber.setText(globals.getMyPortNumber());
-
-        final CustomView customView = findViewById(R.id.customView);
-
-        Button btPeerRest = findViewById(R.id.btPeerReset);
-        btPeerRest.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                tvPeerLatitude.setText("");
-                tvPeerLongitude.setText("");
-                tvPeerProvider.setText("");
-                receiveCount = 0;
-                tvReceiveCount.setText(String.valueOf(receiveCount));
-                tvReceiveInterval.setText("");
-            }
-        });
-        Button button1 = findViewById(R.id.btDemo1);
-        button1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                double angle = 80;
-                customView.showCanvas(false, angle);
-                Log.d("MainActivity", "bt_number=1");
-                tvDistance.setText("10");
-                tvAngle.setText("" + angle);
-            }
-        });
-        Button button2 = findViewById(R.id.btDemo2);
-        button2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                double angle = 60;
-                customView.showCanvas(false, angle);
-                Log.d("MainActivity", "bt_number=2");
-                tvDistance.setText("20");
-                tvAngle.setText("" + angle);
-            }
-        });
-        Button button3 = findViewById(R.id.btDemo3);
-        button3.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                double angle = -10;
-                customView.showCanvas(false, angle);
-                Log.d("MainActivity", "bt_number=3");
-                tvDistance.setText("5");
-                tvAngle.setText("" + angle);
-            }
-        });
-        Button button4 = findViewById(R.id.btReset);
-        button4.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                double angle = 0;
-                CustomView customView = findViewById(R.id.customView);
-                customView.showCanvas(true, angle);
-                Log.d("MainActivity", "bt_number=4");
-                tvDistance.setText("0");
-                tvAngle.setText("" + angle);
-            }
-        });
 
         tvLatitude = findViewById(R.id.tvLatitude);
         tvLongitude = findViewById(R.id.tvLongitude);
@@ -214,30 +170,36 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         tvSendDist = findViewById(R.id.tvSendDist);
         tvSendAngle = findViewById(R.id.tvSendAngle);
 
-//        btMeasStart = findViewById(R.id.btMeasStart);
-//        btMeasStart.setEnabled(false);
-//        btMeasStart.setOnClickListener(new View.OnClickListener(){
-//            @Override
-//            public void onClick(View view) {
-//                isMeasStart = true;
-//                Toast.makeText(MainActivity.this, "位置情報取得開始", Toast.LENGTH_SHORT).show();
-//            }
-//        });
-//
-//        btMeasStop = findViewById(R.id.btMeasStop);
-//        btMeasStop.setOnClickListener(new View.OnClickListener(){
-//            @Override
-//            public void onClick(View view) {
-//                isMeasStart = false;
-//                tvLatitude.setText("");
-//                tvLongitude.setText("");
-//                tvProvider.setText("");
-//                btMeasStart.setEnabled(true);
-//                btMeasStop.setEnabled(false);
-//                Toast.makeText(MainActivity.this, "位置情報取得停止", Toast.LENGTH_SHORT).show();
-//            }
-//        });
+        btLogStart = findViewById(R.id.btLogStart);
+        btLogStart.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                Date d = new Date();
+                SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmm");
+                String dEdit = sdf.format(d);
+//                fileName = path + File.separator + dEdit + ".txt";
+                fileName = dEdit + ".txt";
 
+                isFileSaving = true;
+
+                btLogStart.setEnabled(false);
+                btLogStop.setEnabled(true);
+                Toast.makeText(MainActivity.this, "測定ログ取得開始", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        btLogStop = findViewById(R.id.btLogStop);
+        btLogStop.setEnabled(false);
+        btLogStop.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                isFileSaving = false;
+
+                btLogStart.setEnabled(true);
+                btLogStop.setEnabled(false);
+                Toast.makeText(MainActivity.this, "測定ログ取得終了", Toast.LENGTH_SHORT).show();
+            }
+        });
         btFixed = findViewById(R.id.btFixed);
         btFixed.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -308,6 +270,64 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 mUDPTestCSThread.onStop();
                 btContStop.setEnabled(false);
                 Toast.makeText(MainActivity.this, "連続送信停止", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        Button btPeerRest = findViewById(R.id.btPeerReset);
+        btPeerRest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                tvPeerLatitude.setText("");
+                tvPeerLongitude.setText("");
+                tvPeerProvider.setText("");
+                receiveCount = 0;
+                tvReceiveCount.setText(String.valueOf(receiveCount));
+                tvReceiveInterval.setText("");
+            }
+        });
+        Button button1 = findViewById(R.id.btDemo1);
+        button1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                double angle = 80;
+                customView.showCanvas(false, angle);
+                Log.d("MainActivity", "bt_number=1");
+                tvDistance.setText("10");
+                tvAngle.setText("" + angle);
+            }
+        });
+        Button button2 = findViewById(R.id.btDemo2);
+        button2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                double angle = 60;
+                customView.showCanvas(false, angle);
+                Log.d("MainActivity", "bt_number=2");
+                tvDistance.setText("20");
+                tvAngle.setText("" + angle);
+            }
+        });
+        Button button3 = findViewById(R.id.btDemo3);
+        button3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                double angle = -10;
+                customView.showCanvas(false, angle);
+                Log.d("MainActivity", "bt_number=3");
+                tvDistance.setText("5");
+                tvAngle.setText("" + angle);
+            }
+        });
+        Button button4 = findViewById(R.id.btReset);
+        button4.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                double angle = 0;
+                CustomView customView = findViewById(R.id.customView);
+                customView.showCanvas(true, angle);
+                Log.d("MainActivity", "bt_number=4");
+                tvDistance.setText("0");
+                tvAngle.setText("" + angle);
             }
         });
     }
@@ -383,6 +403,92 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         return ssid;
     }
 
+    // SDカードのマウント先をゲットするメソッド
+    @TargetApi(9)
+    private String getMount_sd() {
+        List<String> mountList = new ArrayList<String>();
+        String mount_sdcard = null;
+
+        Scanner scanner = null;
+        try {
+            // システム設定ファイルにアクセス
+            File vold_fstab = new File("/system/etc/vold.fstab");
+            scanner = new Scanner(new FileInputStream(vold_fstab));
+            // 一行ずつ読み込む
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                // dev_mountまたはfuse_mountで始まる行の
+                if (line.startsWith("dev_mount") || line.startsWith("fuse_mount")) {
+                    // 半角スペースではなくタブで区切られている機種もあるらしいので修正して
+                    // 半角スペース区切り３つめ（path）を取得
+                    String path = line.replaceAll("\t", " ").split(" ")[2];
+                    // 取得したpathを重複しないようにリストに登録
+                    if (!mountList.contains(path)){
+                        mountList.add(path);
+                    }
+                }
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (scanner != null) {
+                scanner.close();
+            }
+        }
+
+        // Environment.isExternalStorageRemovable()はGINGERBREAD以降しか使えない
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD){
+            // getExternalStorageDirectory()が罠であれば、そのpathをリストから除外
+            if (!Environment.isExternalStorageRemovable()) {   // 注1
+                mountList.remove(Environment.getExternalStorageDirectory().getPath());
+            }
+        }
+
+        // マウントされていないpathは除外
+        for (int i = 0; i < mountList.size(); i++) {
+            if (!isMounted(mountList.get(i))){
+                mountList.remove(i--);
+            }
+        }
+
+        // 除外されずに残ったものがSDカードのマウント先
+        if(mountList.size() > 0){
+            mount_sdcard = mountList.get(0);
+        }
+
+        // マウント先をreturn（全て除外された場合はnullをreturn）
+        return mount_sdcard;
+    }
+
+    // 引数に渡したpathがマウントされているかどうかチェックするメソッド
+    public boolean isMounted(String path) {
+        boolean isMounted = false;
+
+        Scanner scanner = null;
+        try {
+            // マウントポイントを取得する
+            File mounts = new File("/proc/mounts");   // 注2
+            scanner = new Scanner(new FileInputStream(mounts));
+            // マウントポイントに該当するパスがあるかチェックする
+            while (scanner.hasNextLine()) {
+                if (scanner.nextLine().contains(path)) {
+                    // 該当するパスがあればマウントされているってこと
+                    isMounted = true;
+                    break;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (scanner != null) {
+                scanner.close();
+            }
+        }
+
+        // マウント状態をreturn
+        return isMounted;
+    }
+
     class UDPTestReceiverThread extends Thread {
         private static final String TAG="UDPTestReceiverThread";
 
@@ -408,6 +514,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
         @Override
         public void start() {
+            Log.d(TAG,"start()");
             mIsArive= true;
             Log.d(TAG,"mIsArive status:"+ mIsArive);
             super.start();
@@ -642,6 +749,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         @Override
         public void start() {
+            Log.d(TAG,"start()");
             mIsArive= true;
             Log.d(TAG,"mIsArive status:"+ mIsArive);
             super.start();
@@ -717,6 +825,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         @Override
         public void start() {
+            Log.d(TAG,"start()");
             mIsArive= true;
             Log.d(TAG,"mIsArive status:"+ mIsArive);
             super.start();
@@ -727,8 +836,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             mIsArive= false;
             Log.d(TAG,"mIsArive status:"+ mIsArive);
         }
-
-//        int cnt = 0;
 
         @Override
         public void run() {
@@ -742,9 +849,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
-//                        tvSSID.setText(String.valueOf(cnt));
-//                        tvIpAddress.setText(String.valueOf(cnt));
-//                        cnt++;
                         tvSSID.setText(getWifiSSID(MainActivity.this));
                         tvIpAddress.setText(getWifiIPAddress(MainActivity.this));
                         Log.d(TAG, "run(): mHandler.post() executed.");
@@ -809,6 +913,47 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
             UDPMeasSenderThread mUDPMeasSenderThread = new UDPMeasSenderThread();
             mUDPMeasSenderThread.start();
+
+            if(isFileSaving){
+                File f = new File(fileName);
+                if(!f.exists()){
+                    f.mkdir();
+                }
+                FileOutputStream fos = null;
+                try {
+                    fos = openFileOutput(fileName, MODE_APPEND );
+                    OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
+                    BufferedWriter bf = new BufferedWriter(osw);
+
+                    Date d = new Date();
+                    SimpleDateFormat sdf = new SimpleDateFormat("yy/MM/dd/_HH:mm:ss");
+                    String dEdit = sdf.format(d);
+                    bf.write(dEdit + ", ");
+                    bf.write(Double.toString(latitude) + ", ");
+                    bf.write(Double.toString(longitude) + ", ");
+                    bf.write(provider + ", ");
+                    bf.write(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(receiveInterval)) + "\n");
+                    bf.flush();
+                    bf.close();
+
+                    Log.d("onLocationChanged()", "File written.");
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        if(fos != null)
+                            fos.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    fos = null;
+                }
+            }
         }
     }
 

@@ -27,14 +27,14 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="#CCffffff"
+                android:background="#00ffffff"
                 android:gravity="top"
                 android:orientation="horizontal">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="#CCffffff"
+                    android:background="#00ffffff"
                     android:text="@string/tv_distance"
                     android:textColor="#000000"
                     android:textSize="30sp" />
@@ -43,7 +43,7 @@
                     android:id="@+id/tvDistance"
                     android:layout_width="80dp"
                     android:layout_height="wrap_content"
-                    android:background="#CCffffff"
+                    android:background="#00ffffff"
                     android:text=""
                     android:textColor="#000000"
                     android:textSize="30sp"
@@ -53,7 +53,7 @@
                     android:layout_width="40dp"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="5dp"
-                    android:background="#CCffffff"
+                    android:background="#00ffffff"
                     android:text="m"
                     android:textColor="#000000"
                     android:textSize="30sp" />
@@ -62,14 +62,14 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="#CCffffff"
+                android:background="#00ffffff"
                 android:orientation="horizontal"
                 android:gravity="top">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="#CCffffff"
+                    android:background="#00ffffff"
                     android:text="@string/tv_angle"
                     android:textColor="#000000"
                     android:textSize="30sp" />
@@ -78,7 +78,7 @@
                     android:id="@+id/tvAngle"
                     android:layout_width="100dp"
                     android:layout_height="wrap_content"
-                    android:background="#CCffffff"
+                    android:background="#00ffffff"
                     android:text=""
                     android:textColor="#000000"
                     android:textSize="30sp"
@@ -88,11 +88,34 @@
                     android:layout_width="40dp"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="5dp"
-                    android:background="#CCffffff"
+                    android:background="#00ffffff"
                     android:text="°"
                     android:textColor="#000000"
                     android:textSize="30sp" />
             </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/btLogStart"
+                android:layout_width="70dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginLeft="5dp"
+                android:textSize="12sp"
+                android:text="log start"/>
+            <Button
+                android:id="@+id/btLogStop"
+                android:layout_width="70dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginLeft="5dp"
+                android:textSize="12sp"
+                android:text="log stop"/>
         </LinearLayout>
     </FrameLayout>
 
