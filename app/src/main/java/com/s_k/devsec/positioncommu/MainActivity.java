@@ -91,10 +91,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     Globals globals;
     Handler mHandler;
 
-    UDPTestReceiverThread mUDPTestReceiver = null;
+    UDPMeasReceiverThread mUDPTestReceiver = null;
     WifiStatusUpdateThread mWifiStatusUpdateThread = null;
     UDPTestContSenderThread mUDPTestCSThread;
 
+    int REQUEST_CODE_ACCESS_FINE_LOCATION_PERMISSION = 1000;
+    int REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION = 1001;
     int commPort;
     int measCount = 0;
     long lastMeasTime =0;
@@ -128,6 +130,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         setContentView(R.layout.activity_main);
 
         globals = (Globals) this.getApplication();
+        mHandler = new Handler();
+
         WifiManager manager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
         WifiInfo info = manager.getConnectionInfo();
         int ipAddr = info.getIpAddress();
@@ -136,8 +140,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         Log.d("MainActivity", "peer's address is:" + ipString);
         globals.setPeerIPAddress(ipString);
 
-        path = "/storage/1A80-DF3D" + File.separator + this.getPackageName();
-        Log.d("MainActivity", "external storage path is:" + path);
+        mWifiStatusUpdateThread = new WifiStatusUpdateThread();
+        mWifiStatusUpdateThread.start();
 
         final CustomView customView = findViewById(R.id.customView);
 
@@ -174,17 +178,39 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         btLogStart.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                Date d = new Date();
-                SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmm");
-                String dEdit = sdf.format(d);
+
+                path = Environment.getExternalStorageDirectory().getPath() + File.separator + "PClog";
+//        path = "/storage/1A80-DF3D" + File.separator + this.getPackageName();
+//        Log.d("MainActivity", "external storage path is:" + path);
+
+                Log.d("MainActivity", "path is:" + path);
+
+                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                    File f = new File(path);
+                    if (!f.exists()) {
+                        boolean result = f.mkdir();
+                        Log.d("MainActivity", "dir create result is:" + result);
+                    }
+
+                    Date d = new Date();
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmm");
+                    String dEdit = sdf.format(d);
 //                fileName = path + File.separator + dEdit + ".txt";
-                fileName = dEdit + ".txt";
+                    fileName = path + File.separator + dEdit + ".txt";
+                    Log.d("MainActivity", "fileName is:" + fileName);
 
-                isFileSaving = true;
+                    isFileSaving = true;
 
-                btLogStart.setEnabled(false);
-                btLogStop.setEnabled(true);
-                Toast.makeText(MainActivity.this, "測定ログ取得開始", Toast.LENGTH_SHORT).show();
+                    btLogStart.setEnabled(false);
+                    btLogStop.setEnabled(true);
+                    Toast.makeText(MainActivity.this, "測定ログ取得開始", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "ストレージアクセスが許可されていません", Toast.LENGTH_SHORT).show();
+                    String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
+                    ActivityCompat.requestPermissions(MainActivity.this, permissions, REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION);
+                    return;
+                }
+
             }
         });
 
@@ -330,28 +356,26 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 tvAngle.setText("" + angle);
             }
         });
+
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
+            mUDPTestReceiver = new UDPMeasReceiverThread();
+            mUDPTestReceiver.start();
+        } else {
+            String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
+            ActivityCompat.requestPermissions(MainActivity.this, permissions, REQUEST_CODE_ACCESS_FINE_LOCATION_PERMISSION);
+            return;
+        }
+
+
     }
 
     @Override
     protected void onResume() {
         Log.d("MainActivity", "onResume()");
         super.onResume();
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
-            ActivityCompat.requestPermissions(MainActivity.this, permissions, 1000);
-            return;
-        }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
-
-        mHandler = new Handler();
-
-        mUDPTestReceiver = new UDPTestReceiverThread();
-        mUDPTestReceiver.start();
-
-        mWifiStatusUpdateThread = new WifiStatusUpdateThread();
-        mWifiStatusUpdateThread.start();
 
         lastMeasTime = System.currentTimeMillis();
     }
@@ -403,101 +427,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         return ssid;
     }
 
-    // SDカードのマウント先をゲットするメソッド
-    @TargetApi(9)
-    private String getMount_sd() {
-        List<String> mountList = new ArrayList<String>();
-        String mount_sdcard = null;
-
-        Scanner scanner = null;
-        try {
-            // システム設定ファイルにアクセス
-            File vold_fstab = new File("/system/etc/vold.fstab");
-            scanner = new Scanner(new FileInputStream(vold_fstab));
-            // 一行ずつ読み込む
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                // dev_mountまたはfuse_mountで始まる行の
-                if (line.startsWith("dev_mount") || line.startsWith("fuse_mount")) {
-                    // 半角スペースではなくタブで区切られている機種もあるらしいので修正して
-                    // 半角スペース区切り３つめ（path）を取得
-                    String path = line.replaceAll("\t", " ").split(" ")[2];
-                    // 取得したpathを重複しないようにリストに登録
-                    if (!mountList.contains(path)){
-                        mountList.add(path);
-                    }
-                }
-            }
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (scanner != null) {
-                scanner.close();
-            }
-        }
-
-        // Environment.isExternalStorageRemovable()はGINGERBREAD以降しか使えない
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD){
-            // getExternalStorageDirectory()が罠であれば、そのpathをリストから除外
-            if (!Environment.isExternalStorageRemovable()) {   // 注1
-                mountList.remove(Environment.getExternalStorageDirectory().getPath());
-            }
-        }
-
-        // マウントされていないpathは除外
-        for (int i = 0; i < mountList.size(); i++) {
-            if (!isMounted(mountList.get(i))){
-                mountList.remove(i--);
-            }
-        }
-
-        // 除外されずに残ったものがSDカードのマウント先
-        if(mountList.size() > 0){
-            mount_sdcard = mountList.get(0);
-        }
-
-        // マウント先をreturn（全て除外された場合はnullをreturn）
-        return mount_sdcard;
-    }
-
-    // 引数に渡したpathがマウントされているかどうかチェックするメソッド
-    public boolean isMounted(String path) {
-        boolean isMounted = false;
-
-        Scanner scanner = null;
-        try {
-            // マウントポイントを取得する
-            File mounts = new File("/proc/mounts");   // 注2
-            scanner = new Scanner(new FileInputStream(mounts));
-            // マウントポイントに該当するパスがあるかチェックする
-            while (scanner.hasNextLine()) {
-                if (scanner.nextLine().contains(path)) {
-                    // 該当するパスがあればマウントされているってこと
-                    isMounted = true;
-                    break;
-                }
-            }
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (scanner != null) {
-                scanner.close();
-            }
-        }
-
-        // マウント状態をreturn
-        return isMounted;
-    }
-
-    class UDPTestReceiverThread extends Thread {
-        private static final String TAG="UDPTestReceiverThread";
+    class UDPMeasReceiverThread extends Thread {
+        private static final String TAG="UDPMeasReceiverThread";
 
         DatagramSocket mDatagramRecvSocket= null;
         boolean mIsArive= false; //スレッド生存フラグ
 
         Map<String, String> receiveMap = new HashMap<>();
 
-        public UDPTestReceiverThread() {
+        public UDPMeasReceiverThread() {
             super();
             // ソケット生成
             commPort = Integer.parseInt(globals.getMyPortNumber());
@@ -694,7 +632,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     class UDPTestSenderThread extends Thread{
-        private static final String TAG="UDPTestReceiverThread";
+        private static final String TAG="UDPMeasReceiverThread";
 
         private UDPTestSenderThread(){
             super();
@@ -915,13 +853,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             mUDPMeasSenderThread.start();
 
             if(isFileSaving){
-                File f = new File(fileName);
-                if(!f.exists()){
-                    f.mkdir();
-                }
                 FileOutputStream fos = null;
                 try {
-                    fos = openFileOutput(fileName, MODE_APPEND );
+                    fos = new FileOutputStream(new File(fileName),true);
                     OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
                     BufferedWriter bf = new BufferedWriter(osw);
 
@@ -971,13 +905,17 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults){
-        if(requestCode == 1000 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+        if(requestCode == REQUEST_CODE_ACCESS_FINE_LOCATION_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED){
             LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
             if(ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
                 return;
             }
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
+            mUDPTestReceiver = new UDPMeasReceiverThread();
+            mUDPTestReceiver.start();
+        }
+        if(requestCode == REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
         }
     }
 
