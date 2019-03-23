@@ -1,7 +1,6 @@
 package com.s_k.devsec.positioncommu;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -15,6 +14,7 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -32,7 +32,6 @@ import android.widget.Toast;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -43,13 +42,12 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 
@@ -366,7 +364,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         } else {
             String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
             ActivityCompat.requestPermissions(MainActivity.this, permissions, REQUEST_CODE_ACCESS_FINE_LOCATION_PERMISSION);
-            return;
         }
 
 
@@ -412,19 +409,17 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     private static String getWifiIPAddress(Context context) {
-        WifiManager manager = (WifiManager)context.getSystemService(WIFI_SERVICE);
+        WifiManager manager = (WifiManager)context.getApplicationContext().getSystemService(WIFI_SERVICE);
         WifiInfo info = manager.getConnectionInfo();
         int ipAddr = info.getIpAddress();
-        String ipString = String.format("%d.%d.%d.%d",
-                (ipAddr>>0)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff, (ipAddr>>24)&0xff);
-        return ipString;
+        return String.format(Locale.US,"%d.%d.%d.%d",
+                (ipAddr)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff, (ipAddr>>24)&0xff);
     }
 
     private static String getWifiSSID(Context context) {
-        WifiManager manager = (WifiManager)context.getSystemService(WIFI_SERVICE);
+        WifiManager manager = (WifiManager)context.getApplicationContext().getSystemService(WIFI_SERVICE);
         WifiInfo info = manager.getConnectionInfo();
-        String  ssid = info.getSSID();
-        return ssid;
+        return info.getSSID();
     }
 
     class UDPMeasReceiverThread extends Thread {
@@ -435,7 +430,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         Map<String, String> receiveMap = new HashMap<>();
 
-        public UDPMeasReceiverThread() {
+        UDPMeasReceiverThread() {
             super();
             // ソケット生成
             commPort = Integer.parseInt(globals.getMyPortNumber());
@@ -454,16 +449,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         public void start() {
             Log.d(TAG,"start()");
             mIsArive= true;
-            Log.d(TAG,"mIsArive status:"+ mIsArive);
+            Log.d(TAG,"mIsAlive status:"+ mIsArive);
             super.start();
         }
 
-        public void onStop() {
+        void onStop() {
             Log.d(TAG,"onStop()");
             mIsArive= false;
             mDatagramRecvSocket.close();
             mDatagramRecvSocket= null;
-            Log.d(TAG,"mIsArive status:"+ mIsArive);
+            Log.d(TAG,"mIsAlive status:"+ mIsArive);
         }
 
         // 受信用スレッドのメイン関数
@@ -507,7 +502,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                         final String sendLongitude = receiveMap.get("sendLongitude");
                         Log.d(TAG,"sendLongitude: " + sendLongitude);
                         final String sendProvieder = receiveMap.get("sendProvider");
-                        Log.d(TAG,"sendProvieder: " + sendLongitude);
+                        Log.d(TAG,"sendProvider: " + sendLongitude);
 
                         receiveCount++;
                         mHandler.post(new Runnable() { //画面更新
@@ -679,7 +674,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     class UDPTestContSenderThread extends Thread{
         private static final String TAG="UDPTestContSenderThread";
-        boolean mIsArive= false;
+        boolean mIsAlive = false;
 
         private UDPTestContSenderThread(){
             super();
@@ -688,15 +683,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         @Override
         public void start() {
             Log.d(TAG,"start()");
-            mIsArive= true;
-            Log.d(TAG,"mIsArive status:"+ mIsArive);
+            mIsAlive = true;
+            Log.d(TAG,"mIsAlive status:"+ mIsAlive);
             super.start();
         }
 
-        public void onStop() {
+        void onStop() {
             Log.d(TAG,"onStop()");
-            mIsArive= false;
-            Log.d(TAG,"mIsArive status:"+ mIsArive);
+            mIsAlive = false;
+            Log.d(TAG,"mIsAlive status:"+ mIsAlive);
         }
 
         @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -706,7 +701,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             int cnt = -60;
             boolean reverse = false;
             try {
-                while(mIsArive){
+                while(mIsAlive){
                     dist = String.valueOf(cnt);
                     angle= String.valueOf(cnt);
                     Map<String, String> map = new HashMap<>();
@@ -755,30 +750,30 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     class WifiStatusUpdateThread extends Thread {
         private static final String TAG="WifiStatusUpdateThread";
-        boolean mIsArive= false;
+        boolean mIsAlive = false;
 
-        public WifiStatusUpdateThread() {
+        WifiStatusUpdateThread() {
             super();
         }
 
         @Override
         public void start() {
             Log.d(TAG,"start()");
-            mIsArive= true;
-            Log.d(TAG,"mIsArive status:"+ mIsArive);
+            mIsAlive = true;
+            Log.d(TAG,"mIsAlive status:"+ mIsAlive);
             super.start();
         }
 
-        public void onStop() {
+        void onStop() {
             Log.d(TAG,"onStop()");
-            mIsArive= false;
-            Log.d(TAG,"mIsArive status:"+ mIsArive);
+            mIsAlive = false;
+            Log.d(TAG,"mIsAlive status:"+ mIsAlive);
         }
 
         @Override
         public void run() {
             Log.d(TAG,"In run(): thread start.");
-            while (mIsArive) {
+            while (mIsAlive) {
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
@@ -840,8 +835,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             longitude = location.getLongitude();
             provider = location.getProvider();
 
-            tvLatitude.setText(Double.toString(latitude));
-            tvLongitude.setText(Double.toString(longitude));
+            tvLatitude.setText(String.format(Locale.US,"%f", latitude));
+            tvLongitude.setText(String.format(Locale.US,"%f", longitude));
             tvProvider.setText(provider);
             measCount++;
             tvMeasCount.setText(String.valueOf(measCount));
@@ -856,11 +851,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 FileOutputStream fos = null;
                 try {
                     fos = new FileOutputStream(new File(fileName),true);
-                    OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
+                    OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
                     BufferedWriter bf = new BufferedWriter(osw);
 
                     Date d = new Date();
-                    SimpleDateFormat sdf = new SimpleDateFormat("yy/MM/dd/_HH:mm:ss");
+                    SimpleDateFormat sdf = new SimpleDateFormat("yy/MM/dd/_HH:mm:ss", Locale.US);
                     String dEdit = sdf.format(d);
                     bf.write(dEdit + ", ");
                     bf.write(Double.toString(latitude) + ", ");
@@ -884,8 +879,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-
-                    fos = null;
                 }
             }
         }
@@ -904,7 +897,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults){
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
         if(requestCode == REQUEST_CODE_ACCESS_FINE_LOCATION_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED){
             LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
             if(ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
