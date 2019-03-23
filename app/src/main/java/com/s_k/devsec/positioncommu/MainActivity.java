@@ -31,15 +31,19 @@ import android.widget.Toast;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
@@ -133,8 +137,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         WifiManager manager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
         WifiInfo info = manager.getConnectionInfo();
         int ipAddr = info.getIpAddress();
-        String ipString = String.format("%d.%d.%d.1",
-                (ipAddr>>0)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff);
+        String ipString = String.format(Locale.US, "%d.%d.%d.1",
+                (ipAddr)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff);
         Log.d("MainActivity", "peer's address is:" + ipString);
         globals.setPeerIPAddress(ipString);
 
@@ -191,7 +195,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     }
 
                     Date d = new Date();
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmm");
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmm", Locale.US);
                     String dEdit = sdf.format(d);
 //                fileName = path + File.separator + dEdit + ".txt";
                     fileName = path + File.separator + dEdit + ".txt";
@@ -206,7 +210,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     Toast.makeText(MainActivity.this, "ストレージアクセスが許可されていません", Toast.LENGTH_SHORT).show();
                     String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
                     ActivityCompat.requestPermissions(MainActivity.this, permissions, REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION);
-                    return;
                 }
 
             }
@@ -231,9 +234,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 fixedLatitude = latitude;
                 fixedLongitude = longitude;
                 tvFixedLatitude.setBackgroundColor(Color.argb(255,255,255,255));
-                tvFixedLatitude.setText(Double.toString(fixedLatitude));
+                tvFixedLatitude.setText(String.format(Locale.US, "%f", fixedLatitude));
                 tvFixedLongitude.setBackgroundColor(Color.argb(255,255,255,255));
-                tvFixedLongitude.setText(Double.toString(fixedLongitude));
+                tvFixedLongitude.setText(String.format(Locale.US, "%f", fixedLongitude));
                 angle = "0";
                 tvAngle.setText(angle);
                 isFixed = true;
@@ -420,6 +423,40 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         WifiManager manager = (WifiManager)context.getApplicationContext().getSystemService(WIFI_SERVICE);
         WifiInfo info = manager.getConnectionInfo();
         return info.getSSID();
+    }
+
+    /**
+     * オブジェクトを送信する。
+     *
+     * @param map     オブジェクト
+     * @param address 宛先アドレス。192.168.1.255のようにネットワークアドレスを指定するとブロードキャスト送信。
+     * @param port    宛先ポート。受信側と揃える。
+     * @throws IOException シリアライズに失敗した時に発生する
+     */
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    static void udpSend(Map<String, String> map, String address, int port) throws IOException {
+        try (DatagramSocket clientSocket = new DatagramSocket()) {
+            InetAddress IPAddress = InetAddress.getByName(address);
+            byte[] sendData = convertToBytes(map);
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+            clientSocket.send(sendPacket);
+        }
+    }
+
+    /**
+     * オブジェクトをバイト配列に変換する。
+     *
+     * @param  object Serializableを実装していなければいけない。
+     * @return バイト配列
+     * @throws IOException シリアライズに失敗した時に発生する
+     */
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private static byte[] convertToBytes(Object object) throws IOException {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             ObjectOutput out = new ObjectOutputStream(bos)) {
+            out.writeObject(object);
+            return bos.toByteArray();
+        }
     }
 
     class UDPMeasReceiverThread extends Thread {
@@ -618,7 +655,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 map.put("sendLatitude", sendLatitude);
                 map.put("sendLongitude", sendLongitude);
                 map.put("sendProvider", sendProvider);
-                UDPObjectTransfer.send(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
+                udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -648,7 +685,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             map.put("angle", angle);
             try {
                 Log.d(TAG,"Peer's IP Address: " + globals.getPeerIPAddress());
-                UDPObjectTransfer.send(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
+                udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -707,7 +744,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     Map<String, String> map = new HashMap<>();
                     map.put("dist", dist);
                     map.put("angle", angle);
-                    UDPObjectTransfer.send(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
+                    udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
                     if(!reverse) {
                         if (cnt != 60) {
                             cnt += 10;

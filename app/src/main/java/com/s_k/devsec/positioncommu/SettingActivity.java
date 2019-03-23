@@ -12,6 +12,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.util.Locale;
+
 public class SettingActivity extends AppCompatActivity {
 
     private Globals globals;
@@ -66,16 +68,17 @@ public class SettingActivity extends AppCompatActivity {
         });
 
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setDisplayHomeAsUpEnabled(true);
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
     }
 
     private static String getWifiIPAddress3octet(Context context) {
-        WifiManager manager = (WifiManager)context.getSystemService(WIFI_SERVICE);
+        WifiManager manager = (WifiManager)context.getApplicationContext().getSystemService(WIFI_SERVICE);
         WifiInfo info = manager.getConnectionInfo();
         int ipAddr = info.getIpAddress();
-        String ipString = String.format("%d.%d.%d.",
-                (ipAddr>>0)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff);
-        return ipString;
+        return String.format(Locale.US, "%d.%d.%d.",
+                (ipAddr)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff);
     }
 
     @Override
