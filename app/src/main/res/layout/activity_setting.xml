@@ -84,7 +84,7 @@
             android:background="@android:color/background_light"
             android:ems="10"
             android:hint="IP Address"
-            android:inputType="textEmailAddress" />
+            android:inputType="number" />
 
         <Button
             android:id="@+id/btSetPeerIPAddress"

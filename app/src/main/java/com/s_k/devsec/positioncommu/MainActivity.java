@@ -25,6 +25,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -46,7 +47,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -59,9 +59,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     TextView tvDistance;
     TextView tvAngle;
-    TextView tvPortNumber;
+
     TextView tvSSID;
     TextView tvIpAddress;
+    TextView tvPortNumber;
     TextView tvLatitude;
     TextView tvLongitude;
     TextView tvProvider;
@@ -69,11 +70,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     TextView tvMeasInterval;
     TextView tvFixedLatitude;
     TextView tvFixedLongitude;
+
+    TextView tvPeerIpAddress;
+    TextView tvPeerPortNumber;
     TextView tvPeerLatitude;
     TextView tvPeerLongitude;
     TextView tvPeerProvider;
     TextView tvReceiveCount;
     TextView tvReceiveInterval;
+
     TextView tvSendDist;
     TextView tvSendAngle;
 
@@ -127,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         Log.d("MainActivity", "onCreate()");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -139,7 +145,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         int ipAddr = info.getIpAddress();
         String ipString = String.format(Locale.US, "%d.%d.%d.1",
                 (ipAddr)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff);
-        Log.d("MainActivity", "peer's address is:" + ipString);
+        Log.d("MainActivity", "Initial peer's address is:" + ipString);
         globals.setPeerIPAddress(ipString);
 
         mWifiStatusUpdateThread = new WifiStatusUpdateThread();
@@ -167,6 +173,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         tvFixedLatitude = findViewById(R.id.tvFixedLatitude);
         tvFixedLongitude = findViewById(R.id.tvFixedLongitude);
 
+        tvPeerIpAddress = findViewById(R.id.tvPeerIpAddress);
+        tvPeerPortNumber = findViewById(R.id.tvPeerPortNumber);
+        tvPeerPortNumber.setText(globals.getPeerPortNumber());
+
         tvPeerLatitude = findViewById(R.id.tvPeerLatitude);
         tvPeerLongitude = findViewById(R.id.tvPeerLongitude);
         tvPeerProvider = findViewById(R.id.tvPeerProvider);
@@ -176,50 +186,53 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         tvSendDist = findViewById(R.id.tvSendDist);
         tvSendAngle = findViewById(R.id.tvSendAngle);
 
+        //LOG STARTボタンの動作
         btLogStart = findViewById(R.id.btLogStart);
         btLogStart.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-
+                Log.d("MainActivity", "btLogStart.onClick()");
+                //内部ストレージのパスを取得し、そこにtxtログ格納フォルダ(PClog)へのパスを追記
                 path = Environment.getExternalStorageDirectory().getPath() + File.separator + "PClog";
-//        path = "/storage/1A80-DF3D" + File.separator + this.getPackageName();
-//        Log.d("MainActivity", "external storage path is:" + path);
+                Log.d("btLogStart.onClick", "Log storing path is:" + path);
 
-                Log.d("MainActivity", "path is:" + path);
-
+                //パーミッション取得済みならファイル生成
                 if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                     File f = new File(path);
                     if (!f.exists()) {
                         boolean result = f.mkdir();
-                        Log.d("MainActivity", "dir create result is:" + result);
+                        Log.d("btLogStart.onClick", "dir create result is:" + result);
                     }
 
+                    //LOG START押下の度に、現在日時からtxtファイル名を生成
                     Date d = new Date();
                     SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmm", Locale.US);
                     String dEdit = sdf.format(d);
-//                fileName = path + File.separator + dEdit + ".txt";
                     fileName = path + File.separator + dEdit + ".txt";
-                    Log.d("MainActivity", "fileName is:" + fileName);
+                    Log.d("btLogStart.onClick", "fileName is:" + fileName);
 
+                    //onLocationChanged()発生時に、合わせて上記txtにログが出力されるフラグをON
                     isFileSaving = true;
 
                     btLogStart.setEnabled(false);
                     btLogStop.setEnabled(true);
                     Toast.makeText(MainActivity.this, "測定ログ取得開始", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(MainActivity.this, "ストレージアクセスが許可されていません", Toast.LENGTH_SHORT).show();
+                } else { //未取得ならパーミッション取得要求
+                    Toast.makeText(MainActivity.this, "ログ出力不可能(ストレージアクセス未許可の為)", Toast.LENGTH_SHORT).show();
                     String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
                     ActivityCompat.requestPermissions(MainActivity.this, permissions, REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION);
                 }
-
             }
         });
 
+        //LOG STOPボタンの動作
         btLogStop = findViewById(R.id.btLogStop);
         btLogStop.setEnabled(false);
         btLogStop.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
+                Log.d("MainActivity", "btLogStop.onClick()");
+                //onLocationChanged()発生時に、合わせて上記txtにログが出力しなくするだけ
                 isFileSaving = false;
 
                 btLogStart.setEnabled(true);
@@ -227,16 +240,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 Toast.makeText(MainActivity.this, "測定ログ取得終了", Toast.LENGTH_SHORT).show();
             }
         });
+
+        //FIXボタンの動作
         btFixed = findViewById(R.id.btFixed);
         btFixed.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
+                Log.d("MainActivity", "btFixed.onClick()");
                 fixedLatitude = latitude;
                 fixedLongitude = longitude;
                 tvFixedLatitude.setBackgroundColor(Color.argb(255,255,255,255));
-                tvFixedLatitude.setText(String.format(Locale.US, "%f", fixedLatitude));
+                tvFixedLatitude.setText(String.valueOf(fixedLatitude));
                 tvFixedLongitude.setBackgroundColor(Color.argb(255,255,255,255));
-                tvFixedLongitude.setText(String.format(Locale.US, "%f", fixedLongitude));
+                tvFixedLongitude.setText(String.valueOf(fixedLongitude));
                 angle = "0";
                 tvAngle.setText(angle);
                 isFixed = true;
@@ -358,17 +374,55 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             }
         });
 
+        final ViewTreeObserver vto = customView.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                Log.d("MainActivity", "onGlobalLayout()");
+                customViewWidth = findViewById(R.id.customView).getWidth();
+                customViewHeight = findViewById(R.id.customView).getHeight();
+                Log.d("MainActivity", "CustomView幅:"+ customViewWidth);
+                Log.d("MainActivity", "CustomView高:"+ customViewHeight);
+                int orientation = getResources().getConfiguration().orientation;
+                CustomView customView = findViewById(R.id.customView);
+                ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams)customView.getLayoutParams();
+
+                if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    Log.d("MainActivity", "onGlobalLayout():ORIENTATION_PORTRAIT"+ customViewHeight);
+                    // 縦向きの場合
+                    customView.setLayoutParams(marginLayoutParams);
+                }
+
+                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    // 横向きの場合
+                    Log.d("MainActivity", "onGlobalLayout():ORIENTATION_LANDSCAPE"+ customViewHeight);
+                    customViewHeight = customViewWidth;
+                    marginLayoutParams.height = customViewHeight;
+                    Log.d("MainActivity", "CustomView高(修正):"+ customViewHeight);
+                    customView.setLayoutParams(marginLayoutParams);
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                    customView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                } else {
+                    customView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                }
+
+            }
+        });
+
+        //位置情報取得開始までの手続。
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        //パーミッション取得済みならそのまま位置情報取得要求&ピアデバイスからの受信待ちスレッド開始
         if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
             mUDPTestReceiver = new UDPMeasReceiverThread();
             mUDPTestReceiver.start();
-        } else {
+        } else { //未取得ならパーミッション取得要求
             String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
             ActivityCompat.requestPermissions(MainActivity.this, permissions, REQUEST_CODE_ACCESS_FINE_LOCATION_PERMISSION);
         }
-
 
     }
 
@@ -390,16 +444,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     @Override
     public void onRestart() {
         Log.d("MainActivity", "onRestart()");
+        super.onRestart();
         tvPortNumber.setText(globals.getMyPortNumber());
         commPort = Integer.parseInt(globals.getMyPortNumber());
-        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
-            ActivityCompat.requestPermissions(MainActivity.this, permissions, 1000);
-            return;
-        }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
-        super.onRestart();
+        tvPeerIpAddress.setText(globals.getPeerIPAddress());
+        tvPeerPortNumber.setText(globals.getPeerPortNumber());
     }
 
     @Override
@@ -409,6 +458,115 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         mUDPTestReceiver.onStop();
         mWifiStatusUpdateThread.onStop();
         super.onDestroy();
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        Log.d("MainActivity", "onLocationChanged():" + " Provider:" + location.getProvider() + " Acc:" + location.getAccuracy());
+        if (isMeasStart) {
+            latitude = location.getLatitude();
+            longitude = location.getLongitude();
+            provider = location.getProvider();
+
+            tvLatitude.setText(String.valueOf(latitude));
+            tvLongitude.setText(String.valueOf(longitude));
+            tvProvider.setText(provider);
+            measCount++;
+            tvMeasCount.setText(String.valueOf(measCount));
+            long receiveInterval = System.currentTimeMillis() - lastMeasTime;
+            lastMeasTime = System.currentTimeMillis();
+            tvMeasInterval.setText(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(receiveInterval)));
+
+            UDPMeasSenderThread mUDPMeasSenderThread = new UDPMeasSenderThread();
+            mUDPMeasSenderThread.start();
+
+            if(isFileSaving){
+                FileOutputStream fos = null;
+                try {
+                    fos = new FileOutputStream(new File(fileName),true);
+                    BufferedWriter bf = new BufferedWriter(new OutputStreamWriter(fos));
+
+                    Date d = new Date();
+                    SimpleDateFormat sdf = new SimpleDateFormat("yy/MM/dd/_HH:mm:ss", Locale.US);
+                    String dEdit = sdf.format(d);
+                    bf.write(dEdit + ", ");
+                    bf.write(Double.toString(latitude) + ", ");
+                    bf.write(Double.toString(longitude) + ", ");
+                    bf.write(provider + ", ");
+                    bf.write(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(receiveInterval)) + "\n");
+                    bf.flush();
+                    bf.close();
+
+                    Log.d("onLocationChanged()", "File written.");
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        if(fos != null)
+                            fos.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+        Log.d("MainActivity", "onProviderDisabled()");
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+        Log.d("MainActivity", "onProviderEnabled()");
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+        Log.d("MainActivity", "onStatusChanged()");
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
+        Log.d("MainActivity", "onRequestPermissionsResult()");
+        if(requestCode == REQUEST_CODE_ACCESS_FINE_LOCATION_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+            LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+            if(ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+                return;
+            }
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
+            mUDPTestReceiver = new UDPMeasReceiverThread();
+            mUDPTestReceiver.start();
+        }
+        if(requestCode == REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        Log.d("MainActivity", "onCreateOptionsMenu()");
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_options, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Log.d("MainActivity", "onOptionsItemSelected()");
+        int itemId = item.getItemId();
+        switch (itemId) {
+            case R.id.menuListOptionSetting:
+                Intent intent = new Intent(MainActivity.this, SettingActivity.class);
+                startActivity(intent);
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private static String getWifiIPAddress(Context context) {
@@ -821,7 +979,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     public void run() {
                         tvSSID.setText(getWifiSSID(MainActivity.this));
                         tvIpAddress.setText(getWifiIPAddress(MainActivity.this));
-                        Log.d(TAG, "run(): mHandler.post() executed.");
+//                        Log.d(TAG, "run(): mHandler.post() executed.");
                     }
                 });
             }
@@ -829,142 +987,4 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        customViewWidth = findViewById(R.id.customView).getWidth();
-        customViewHeight = findViewById(R.id.customView).getHeight();
-        Log.d("MainActivity", "CustomView幅:"+ customViewWidth);
-        Log.d("MainActivity", "CustomView高:"+ customViewHeight);
-        int orientation = getResources().getConfiguration().orientation;
-        CustomView customView = findViewById(R.id.customView);
-        ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams)customView.getLayoutParams();
-
-        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            // 横向きの場合
-            Log.d("MainActivity", "onWindowFocusChanged():ORIENTATION_LANDSCAPE"+ customViewHeight);
-            customViewHeight = customViewWidth;
-            marginLayoutParams.height = customViewHeight;
-            Log.d("MainActivity", "CustomView高(修正):"+ customViewHeight);
-            customView.setLayoutParams(marginLayoutParams);
-        }
-
-        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-            Log.d("MainActivity", "onWindowFocusChanged():ORIENTATION_PORTRAIT"+ customViewHeight);
-            // 縦向きの場合
-            customView.setLayoutParams(marginLayoutParams);
-        }
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        Log.d("MainActivity", "onConfigurationChanged()");
-        super.onConfigurationChanged(newConfig);
-        //処理
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    @Override
-    public void onLocationChanged(Location location) {
-        Log.d("MainActivity", "onLocationChanged():" + location.getProvider() + " " + String.valueOf(location.getAccuracy()) + " " + location.getTime());
-        if (isMeasStart) {
-            latitude = location.getLatitude();
-            longitude = location.getLongitude();
-            provider = location.getProvider();
-
-            tvLatitude.setText(String.format(Locale.US,"%f", latitude));
-            tvLongitude.setText(String.format(Locale.US,"%f", longitude));
-            tvProvider.setText(provider);
-            measCount++;
-            tvMeasCount.setText(String.valueOf(measCount));
-            long receiveInterval = System.currentTimeMillis() - lastMeasTime;
-            lastMeasTime = System.currentTimeMillis();
-            tvMeasInterval.setText(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(receiveInterval)));
-
-            UDPMeasSenderThread mUDPMeasSenderThread = new UDPMeasSenderThread();
-            mUDPMeasSenderThread.start();
-
-            if(isFileSaving){
-                FileOutputStream fos = null;
-                try {
-                    fos = new FileOutputStream(new File(fileName),true);
-                    OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
-                    BufferedWriter bf = new BufferedWriter(osw);
-
-                    Date d = new Date();
-                    SimpleDateFormat sdf = new SimpleDateFormat("yy/MM/dd/_HH:mm:ss", Locale.US);
-                    String dEdit = sdf.format(d);
-                    bf.write(dEdit + ", ");
-                    bf.write(Double.toString(latitude) + ", ");
-                    bf.write(Double.toString(longitude) + ", ");
-                    bf.write(provider + ", ");
-                    bf.write(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(receiveInterval)) + "\n");
-                    bf.flush();
-                    bf.close();
-
-                    Log.d("onLocationChanged()", "File written.");
-
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    try {
-                        if(fos != null)
-                            fos.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
-        if(requestCode == REQUEST_CODE_ACCESS_FINE_LOCATION_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED){
-            LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-            if(ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                return;
-            }
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
-            mUDPTestReceiver = new UDPMeasReceiverThread();
-            mUDPTestReceiver.start();
-        }
-        if(requestCode == REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu_options, menu);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int itemId = item.getItemId();
-        switch (itemId) {
-            case R.id.menuListOptionSetting:
-                Intent intent = new Intent(MainActivity.this, SettingActivity.class);
-                startActivity(intent);
-                break;
-        }
-        return super.onOptionsItemSelected(item);
-    }
 }

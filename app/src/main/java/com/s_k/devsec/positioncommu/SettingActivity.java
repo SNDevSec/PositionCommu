@@ -54,7 +54,7 @@ public class SettingActivity extends AppCompatActivity {
         });
 
         EditText etSetPeerPortNumber = findViewById(R.id.etSetPeerPortNumber);
-        etSetPeerPortNumber.setText(globals.getMyPortNumber());
+        etSetPeerPortNumber.setText(globals.getPeerPortNumber());
 
         Button btSetPeerPortNumber = findViewById(R.id.btSetPeerPortNumber);
         btSetPeerPortNumber.setOnClickListener(new View.OnClickListener(){

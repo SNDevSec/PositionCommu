@@ -13,6 +13,7 @@ import android.view.View;
 import static java.lang.Math.sqrt;
 
 public class CustomView extends View {
+    private static final String TAG="CustomView";
 
     private Paint paint;
     private Path path;
@@ -27,19 +28,20 @@ public class CustomView extends View {
     }
 
     public void showCanvas(boolean flg, double ang){
+        Log.d(TAG, "showCanvas()");
         viewflg = flg;
         angle = ang;
+        Log.d(TAG, "angle is:" + angle);
         invalidate();
     }
 
     @Override
     protected void onDraw(Canvas canvas){
-
+        Log.d(TAG, "onDraw()");
         float customViewWidth = MainActivity.customViewWidth;
         float customViewHeight = MainActivity.customViewHeight;
         float yourXPosition = customViewWidth / 2;
         float yourYPosition = customViewHeight * (float)0.9;
-        Log.d("CustomView", "yourYPosition:"+ yourYPosition);
         double radius = customViewHeight * 0.4;
 
         float targetXPosition;
@@ -52,7 +54,6 @@ public class CustomView extends View {
 
         //背景
         canvas.drawColor(Color.argb(255, 255, 255, 255));
-        Log.d("CustomView", "angle is:" + angle);
         if(angle > 60 || angle < -60){
             canvas.drawColor(Color.argb(255, 255, 182, 191));
 //            canvas.drawColor(0xffb6c1);
@@ -106,12 +107,12 @@ public class CustomView extends View {
             targetXPosition = yourXPosition;
             targetYPosition = yourYPosition - (float)radius;
         }else{ //angle更新毎に描画する際の処理
-            Log.d("CustomView", "radius:"+ radius);
-            Log.d("CustomView", "angle:"+ angle);
+            Log.d(TAG, "radius:"+ radius);
+            Log.d(TAG, "angle:"+ angle);
             rsin_theta = (float)(radius * Math.sin(Math.toRadians(angle)));
-            Log.d("CustomView", "rcos_theta:"+ rsin_theta);
+            Log.d(TAG, "rcos_theta:"+ rsin_theta);
             rcos_theta = (float)(radius * Math.cos(Math.toRadians(angle)));
-            Log.d("CustomView", "rsin_theta:"+ rcos_theta);
+            Log.d(TAG, "rsin_theta:"+ rcos_theta);
             targetXPosition = yourXPosition + rsin_theta;
             targetYPosition = yourYPosition - rcos_theta;
         }
