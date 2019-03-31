@@ -123,7 +123,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     String dist = "";
     String angle = "";
     String path = "";
-    String fileName = "";
+    String myLogName = "";
+    String receiveLogName = "";
 
     boolean isMeasStart = true;
     boolean isFixed = false;
@@ -206,10 +207,41 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
                     //LOG START押下の度に、現在日時からtxtファイル名を生成
                     Date d = new Date();
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmm", Locale.US);
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyMMdd_HHmm", Locale.US);
                     String dEdit = sdf.format(d);
-                    fileName = path + File.separator + dEdit + ".txt";
-                    Log.d("btLogStart.onClick", "fileName is:" + fileName);
+                    myLogName = path + File.separator + dEdit + "_"+ Build.MODEL + ".txt";
+                    Log.d("btLogStart.onClick", "myLogName is:" + myLogName);
+                    //受信用ログファイルについては、ファイル名の途中まで作成しておく
+                    //(日付をmyLogと合わせるため)
+                    receiveLogName = path + File.separator + dEdit + "_";
+
+                    FileOutputStream fos = null;
+                    try {
+                        fos = new FileOutputStream(new File(myLogName),true);
+                        BufferedWriter bf = new BufferedWriter(new OutputStreamWriter(fos));
+                        bf.write("Date, ");
+                        bf.write("Latitude, ");
+                        bf.write("Longitude, ");
+                        bf.write("Provider, ");
+                        bf.write("Interval\n");
+                        bf.flush();
+                        bf.close();
+
+                        Log.d("onLocationChanged()", "Row Titles written.");
+
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    catch (IOException e) {
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            if(fos != null)
+                                fos.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
 
                     //onLocationChanged()発生時に、合わせて上記txtにログが出力されるフラグをON
                     isFileSaving = true;
@@ -483,7 +515,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             if(isFileSaving){
                 FileOutputStream fos = null;
                 try {
-                    fos = new FileOutputStream(new File(fileName),true);
+                    fos = new FileOutputStream(new File(myLogName),true);
                     BufferedWriter bf = new BufferedWriter(new OutputStreamWriter(fos));
 
                     Date d = new Date();
@@ -625,6 +657,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         Map<String, String> receiveMap = new HashMap<>();
 
+        long receiveInterval;
+        int fileWriteCount = 0;
+
         UDPMeasReceiverThread() {
             super();
             // ソケット生成
@@ -676,7 +711,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     }
                     Log.d(TAG,"In run(): packet received :" + receiveMap);
 
-                    if(receiveMap.containsKey("dist")) { //テストdist,angleデータを受け取ったとき
+                    Date d = new Date();
+                    SimpleDateFormat sdf = new SimpleDateFormat("yy/MM/dd/_HH:mm:ss", Locale.US);
+                    String dEdit = sdf.format(d);
+
+                    if(receiveMap.containsKey("test")) { //テストデータを受け取ったとき
                         final String dist = receiveMap.get("dist");
                         Log.d(TAG,"dist: " + dist);
                         final String angle = receiveMap.get("angle");
@@ -691,13 +730,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                 Log.d(TAG, "In run(): Canvas refreshed");
                             }
                         });
-                    }else if(receiveMap.containsKey("sendLatitude")) { //緯度経度を受け取ったとき
+                    }else if(receiveMap.containsKey("positionInfo")) { //緯度経度を受け取ったとき
                         final String sendLatitude = receiveMap.get("sendLatitude");
                         Log.d(TAG,"sendLatitude: " + sendLatitude);
                         final String sendLongitude = receiveMap.get("sendLongitude");
                         Log.d(TAG,"sendLongitude: " + sendLongitude);
-                        final String sendProvieder = receiveMap.get("sendProvider");
+                        final String sendProvider = receiveMap.get("sendProvider");
                         Log.d(TAG,"sendProvider: " + sendLongitude);
+                        final String model = receiveMap.get("model");
 
                         receiveCount++;
                         mHandler.post(new Runnable() { //画面更新
@@ -705,27 +745,76 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             public void run() {
                                 tvPeerLatitude.setText(sendLatitude);
                                 tvPeerLongitude.setText(sendLongitude);
-                                tvPeerProvider.setText(sendProvieder);
+                                tvPeerProvider.setText(sendProvider);
                                 tvReceiveCount.setText(String.valueOf(receiveCount));
                             }
                         });
-                        if(lastReceiveTime ==0){
+                        if(lastReceiveTime == 0){
                             mHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    tvReceiveInterval.setText(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(lastReceiveTime)));
-                                    lastReceiveTime = System.currentTimeMillis();
+                                    tvReceiveInterval.setText("0");
                                 }
                             });
+                            lastReceiveTime = System.currentTimeMillis();
                         }else {
+                            receiveInterval = System.currentTimeMillis() - lastReceiveTime;
+                            lastReceiveTime = System.currentTimeMillis();
                             mHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    long receiveInterval = System.currentTimeMillis() - lastReceiveTime;
-                                    lastReceiveTime = System.currentTimeMillis();
                                     tvReceiveInterval.setText(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(receiveInterval)));
                                 }
                             });
+                        }
+
+                        if(isFileSaving){
+                            if(fileWriteCount == 0){
+                                receiveLogName += model + ".txt";
+                                Log.d(TAG, "receiveLogName is:" + receiveLogName);
+                            }
+                            FileOutputStream fos = null;
+                            try {
+                                fos = new FileOutputStream(new File(receiveLogName),true);
+                                BufferedWriter bf = new BufferedWriter(new OutputStreamWriter(fos));
+
+                                if(fileWriteCount == 0){
+                                    bf.write("Date, ");
+                                    bf.write("Latitude, ");
+                                    bf.write("Longitude, ");
+                                    bf.write("Provider, ");
+                                    bf.write("Interval, ");
+                                    bf.write("dist, ");
+                                    bf.write("angle\n");
+                                }
+                                bf.write(dEdit + ", ");
+                                bf.write(sendLatitude + ", ");
+                                bf.write(sendLongitude + ", ");
+                                bf.write(sendProvider + ", ");
+                                bf.write(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(receiveInterval)) + ", ");
+                                if(!isFixed){
+                                    bf.write(", ");
+                                    bf.write("\n");
+                                }
+                                bf.flush();
+                                bf.close();
+
+                                Log.d(TAG, "Received Log File written.");
+
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            }
+                            catch (IOException e) {
+                                e.printStackTrace();
+                            } finally {
+                                try {
+                                    if(fos != null)
+                                        fos.close();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            fileWriteCount++;
                         }
 
                         if(isFixed){
@@ -771,6 +860,33 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                     }
                                 });
                             }
+                            if(isFileSaving){
+                                FileOutputStream fos = null;
+                                try {
+                                    fos = new FileOutputStream(new File(receiveLogName),true);
+                                    BufferedWriter bf = new BufferedWriter(new OutputStreamWriter(fos));
+
+                                    bf.write(dist + ", ");
+                                    bf.write(angle + "\n");
+                                    bf.flush();
+                                    bf.close();
+
+                                    Log.d(TAG, "Received Log File written.");
+
+                                } catch (FileNotFoundException e) {
+                                    e.printStackTrace();
+                                }
+                                catch (IOException e) {
+                                    e.printStackTrace();
+                                } finally {
+                                    try {
+                                        if(fos != null)
+                                            fos.close();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
                         }
 
                     }
@@ -810,9 +926,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 String sendLongitude = String.valueOf(longitude);
                 String sendProvider = provider;
                 Map<String, String> map = new HashMap<>();
+                map.put("positionInfo", "positionInfo");
                 map.put("sendLatitude", sendLatitude);
                 map.put("sendLongitude", sendLongitude);
                 map.put("sendProvider", sendProvider);
+                map.put("model", Build.MODEL);
                 udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
             } catch (IOException e) {
                 e.printStackTrace();
@@ -839,8 +957,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             Log.d(TAG,"In run(): thread start.");
             final int button_id = mButtonClicked.getId();
             Map<String, String> map = new HashMap<>();
+            map.put("test", "test");
             map.put("dist", dist);
             map.put("angle", angle);
+            map.put("model", Build.MODEL);
             try {
                 Log.d(TAG,"Peer's IP Address: " + globals.getPeerIPAddress());
                 udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
