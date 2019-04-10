@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     Globals globals;
     Handler mHandler;
 
-    UDPMeasReceiverThread mUDPTestReceiver = null;
+    UDPReceiverThread mUDPTestReceiver = null;
     WifiStatusUpdateThread mWifiStatusUpdateThread = null;
     UDPTestContSenderThread mUDPTestCSThread;
 
@@ -449,7 +449,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
-            mUDPTestReceiver = new UDPMeasReceiverThread();
+            mUDPTestReceiver = new UDPReceiverThread();
             mUDPTestReceiver.start();
         } else { //未取得ならパーミッション取得要求
             String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
@@ -573,7 +573,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             }
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, this);
             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
-            mUDPTestReceiver = new UDPMeasReceiverThread();
+            mUDPTestReceiver = new UDPReceiverThread();
             mUDPTestReceiver.start();
         }
         if(requestCode == REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -649,8 +649,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
-    class UDPMeasReceiverThread extends Thread {
-        private static final String TAG="UDPMeasReceiverThread";
+    /**
+     * 多種のUDPパケット(テストデータ、測定データ、IPアドレス)を待ち受けるスレッド
+     * 受け取ったUDPパケット(Map型オブジェクト)
+     */
+    class UDPReceiverThread extends Thread {
+        private static final String TAG="UDPReceiverThread";
 
         DatagramSocket mDatagramRecvSocket= null;
         boolean mIsArive= false; //スレッド生存フラグ
@@ -660,7 +664,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         long receiveInterval;
         int fileWriteCount = 0;
 
-        UDPMeasReceiverThread() {
+        UDPReceiverThread() {
             super();
             // ソケット生成
             commPort = Integer.parseInt(globals.getMyPortNumber());
@@ -904,6 +908,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
+    /**
+     * 測定データをUDPパケットにして送信する単発スレッド
+     * Map型オブジェクトにString型データを詰め込み、バイト変換してバイトストリームで送信する(upsend()メソッド)
+     */
     class UDPMeasSenderThread extends Thread{
         private static final String TAG="UDPMeasSenderThread";
 
@@ -926,7 +934,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 String sendLongitude = String.valueOf(longitude);
                 String sendProvider = provider;
                 Map<String, String> map = new HashMap<>();
-                map.put("positionInfo", "positionInfo");
+                map.put("positionInfo", "positionInfo"); //UDPパケットの識別子。測定データ受信時処理に分岐
                 map.put("sendLatitude", sendLatitude);
                 map.put("sendLongitude", sendLongitude);
                 map.put("sendProvider", sendProvider);
@@ -939,8 +947,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
+    /**
+     * テストデータをUDPパケットにして送信する単発スレッド
+     */
     class UDPTestSenderThread extends Thread{
-        private static final String TAG="UDPMeasReceiverThread";
+        private static final String TAG="UDPReceiverThread";
 
         private UDPTestSenderThread(){
             super();
@@ -957,10 +968,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             Log.d(TAG,"In run(): thread start.");
             final int button_id = mButtonClicked.getId();
             Map<String, String> map = new HashMap<>();
-            map.put("test", "test");
+            map.put("test", "test"); //UDPパケットの識別子。テストデータ受信時処理に分岐
             map.put("dist", dist);
             map.put("angle", angle);
-            map.put("model", Build.MODEL);
             try {
                 Log.d(TAG,"Peer's IP Address: " + globals.getPeerIPAddress());
                 udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
@@ -987,6 +997,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
+    /**
+     * スレッド有効期間中、テストデータを送信し続けるスレッド
+     */
     class UDPTestContSenderThread extends Thread{
         private static final String TAG="UDPTestContSenderThread";
         boolean mIsAlive = false;
@@ -1020,6 +1033,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     dist = String.valueOf(cnt);
                     angle= String.valueOf(cnt);
                     Map<String, String> map = new HashMap<>();
+                    map.put("test", "test"); //UDPパケットの識別子。テストデータ受信時処理に分岐
                     map.put("dist", dist);
                     map.put("angle", angle);
                     udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
@@ -1063,6 +1077,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
+    /**
+     * 接続先WiFiが変わったら自動的にアプリ上の自端末IP表示を更新するスレッド
+     * 5秒置きに現在のIP設定をポーリング&表示を更新し続ける
+     */
     class WifiStatusUpdateThread extends Thread {
         private static final String TAG="WifiStatusUpdateThread";
         boolean mIsAlive = false;
