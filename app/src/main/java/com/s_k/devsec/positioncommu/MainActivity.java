@@ -824,8 +824,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                         if(isFixed){
                             //自己緯度経度、受信緯度経度から距離、角度算出
                             //常に方位角は計算が必要なので、⊿x、⊿yは毎回求める
-                            double dLatitude = (fixedLatitude - Double.parseDouble(sendLatitude)) * (Math.PI / 180); //緯度変位[rad]
-                            double dLongitude = (fixedLongitude - Double.parseDouble(sendLongitude)) * (Math.PI / 180); //経度変位[rad]
+                            double dLatitude = (Double.parseDouble(sendLatitude) - fixedLatitude) * (Math.PI / 180); //緯度変位[rad]
+                            double dLongitude = (Double.parseDouble(sendLongitude) - fixedLongitude) * (Math.PI / 180); //経度変位[rad]
                             double dy = EARTHRADIUS * dLatitude; //緯度方向変位距離
                             double dx = EARTHRADIUS * Math.cos(fixedLatitude) * dLongitude; //経度方向変位距離
                             long length = Math.round(Math.sqrt((dx*dx + dy*dy)));
