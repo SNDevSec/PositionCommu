@@ -87,13 +87,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     TextView tvSendDist;
     TextView tvSendAngle;
 
-    Button btFixed;
     Button btSendDemo1;
     Button btSendDemo2;
     Button btContStart;
     Button btContStop;
     Button btLogStart;
     Button btLogStop;
+    Button btPeerIPAutoSetting;
 
     View mButtonClicked;
 
@@ -135,6 +135,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     boolean isFixed = false;
     boolean isFirstReceive = true;
     boolean isFileSaving = false;
+    boolean isIPSearchResReceived = false;
+    boolean isIPSearchFinished = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -326,7 +328,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         });
 
         //FIXボタンの動作
-        btFixed = findViewById(R.id.btFixed);
+        Button btFixed = findViewById(R.id.btFixed);
         btFixed.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
@@ -344,6 +346,45 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 CustomView customView = findViewById(R.id.customView);
                 customView.showCanvas(false, Double.parseDouble(angle));
                 Log.d("btFixed", "Canvas refreshed");
+            }
+        });
+
+        //FIX RESETボタンの動作
+        Button btFixReset = findViewById(R.id.btFixReset);
+        btFixReset.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                Log.d("MainActivity", "btFixReset.onClick()");
+                tvFixedLatitude.setBackgroundColor(Color.argb(255,255,255,255));
+                tvFixedLatitude.setText("");
+                tvFixedLongitude.setBackgroundColor(Color.argb(255,255,255,255));
+                tvFixedLongitude.setText("");
+                dist = "0";
+                angle = "0";
+                tvDistance.setText(dist);
+                tvAngle.setText(angle);
+                isFixed = false;
+                isFirstReceive = false;
+                CustomView customView = findViewById(R.id.customView);
+                customView.showCanvas(false, Double.parseDouble(angle));
+                Log.d("btFixReset", "Canvas refreshed");
+            }
+        });
+
+        //AUTO SETTINGSボタンの動作
+        btPeerIPAutoSetting = findViewById(R.id.btPeerIPAutoSetting);
+        btPeerIPAutoSetting.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                Log.d("MainActivity", "btPeerIPAutoSetting.onClick()");
+                if(isIPSearchResReceived || isIPSearchFinished){
+                    Toast.makeText(MainActivity.this, "既に通信は確立しています", Toast.LENGTH_SHORT).show();
+                }else {
+                    PeerIPSearchThread mPeerIPSearch = new PeerIPSearchThread();
+                    mPeerIPSearch.start();
+                    btPeerIPAutoSetting.setEnabled(false);
+                    Toast.makeText(MainActivity.this, "PeerデバイスIP探索開始", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -630,6 +671,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         return info.getSSID();
     }
 
+    //ブロードキャストアドレスの取得
+    private static String getBroadcastAddress(Context context){
+        WifiManager manager = (WifiManager)context.getApplicationContext().getSystemService(WIFI_SERVICE);
+        WifiInfo info = manager.getConnectionInfo();
+        int ipAddr = info.getIpAddress();
+        return String.format(Locale.US,"%d.%d.%d.0",
+                (ipAddr)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff);
+    }
+
     /**
      * オブジェクトを送信する。
      *
@@ -730,11 +780,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     }
                     Log.d(TAG,"In run(): packet received :" + receiveMap);
 
-                    Date d = new Date();
-                    SimpleDateFormat sdf = new SimpleDateFormat("yy/MM/dd/_HH:mm:ss", Locale.US);
-                    String dEdit = sdf.format(d);
-
                     if(receiveMap.containsKey("test")) { //テストデータを受け取ったとき
+                        isIPSearchFinished = true;
                         final String dist = receiveMap.get("dist");
                         Log.d(TAG,"dist: " + dist);
                         final String angle = receiveMap.get("angle");
@@ -750,6 +797,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             }
                         });
                     }else if(receiveMap.containsKey("positionInfo")) { //緯度経度を受け取ったとき
+                        isIPSearchFinished = true;
                         final String sendLatitude = receiveMap.get("sendLatitude");
                         Log.d(TAG,"sendLatitude: " + sendLatitude);
                         final String sendLongitude = receiveMap.get("sendLongitude");
@@ -806,6 +854,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                     bf.write("dist, ");
                                     bf.write("angle\n");
                                 }
+                                Date d = new Date();
+                                SimpleDateFormat sdf = new SimpleDateFormat("yy/MM/dd/_HH:mm:ss", Locale.US);
+                                String dEdit = sdf.format(d);
                                 bf.write(dEdit + ", ");
                                 bf.write(sendLatitude + ", ");
                                 bf.write(sendLongitude + ", ");
@@ -908,6 +959,41 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             }
                         }
 
+                    }else if(receiveMap.containsKey("ipSearch")){
+                        if(!receiveMap.get("ip").equals(getWifiIPAddress(MainActivity.this))){
+                            globals.setPeerIPAddress(receiveMap.get("ip"));
+                            Log.d(TAG,"Peer's IP address changed: " + globals.getPeerIPAddress());
+                            SharedPreferences.Editor editor = sharedPref.edit();
+                            editor.putString("PEER_IP_ADDRESS", globals.getPeerIPAddress());
+                            editor.apply();
+                            isIPSearchResReceived = true;
+                            IPSearchResponseThread IPSearchResponse = new IPSearchResponseThread();
+                            IPSearchResponse.start();
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    tvPeerIpAddress.setText(globals.getPeerIPAddress());
+                                    Toast.makeText(MainActivity.this, "PeerデバイスからIP探索を受信しました", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+
+                    }else if(receiveMap.containsKey("ipSearchResponse")){
+                        if(!isIPSearchResReceived){
+                            globals.setPeerIPAddress(receiveMap.get("ip"));
+                            Log.d(TAG,"Peer's IP address changed: " + globals.getPeerIPAddress());
+                            SharedPreferences.Editor editor = sharedPref.edit();
+                            editor.putString("PEER_IP_ADDRESS", globals.getPeerIPAddress());
+                            editor.apply();
+                            isIPSearchResReceived = true;
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    tvPeerIpAddress.setText(globals.getPeerIPAddress());
+                                    Toast.makeText(MainActivity.this, "PeerデバイスIP探索完了", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
                     }
 
                 }
@@ -1140,4 +1226,126 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
+    /**
+     * IP探索スレッド
+     * 自IPと探索処理であることの識別子"ipSearch"をMapオブジェクトにputしてブロードキャストする
+     */
+    class PeerIPSearchThread extends Thread {
+        private static final String TAG="PeerIPSearchThread";
+
+        PeerIPSearchThread() {
+            super();
+        }
+
+        @Override
+        public void start() {
+            Log.d(TAG,"start()");
+            super.start();
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+        @Override
+        public void run() {
+            int count = 0;
+            Log.d(TAG,"In run(): thread start.");
+            while (count < 10) {
+                //レスポンス受信済の場合、whileループ終了
+                Log.d(TAG,"isIPSearchResReceived is: " + isIPSearchResReceived);
+                if(isIPSearchResReceived){
+                    break;
+                }
+                Log.d(TAG,"isIPSearchFinished is: " + isIPSearchFinished);
+                if(isIPSearchFinished){
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MainActivity.this, "通信確立済のためAUTO SETTING中止", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                    break;
+                }
+
+                Log.d(TAG,"count is: " + count);
+                Map<String, String> map = new HashMap<>();
+                map.put("ipSearch", "ipSearch"); //UDPパケットの識別子。テストデータ受信時処理に分岐
+                map.put("ip", getWifiIPAddress(MainActivity.this));
+                try (DatagramSocket udpSocket = new DatagramSocket()) {
+                    udpSocket.setBroadcast(true);
+                    byte[] sendData = convertToBytes(map);
+                    DatagramPacket packet = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(getBroadcastAddress(MainActivity.this)), Integer.parseInt(globals.getPeerPortNumber()));
+                    udpSocket.send(packet);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    Thread.sleep(5000);
+                    count++;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    btPeerIPAutoSetting.setEnabled(true);
+                }
+            });
+            Log.d(TAG,"In run(): thread end.");
+        }
+    }
+
+    /**
+     * IP探索レスポンススレッド
+     * 自IPと探索へのレスポンスであることの識別子"ipSearchResponse"をMapオブジェクトにputしてPeerに送信
+     */
+    class IPSearchResponseThread extends Thread {
+        private static final String TAG="IPSearchResponseThread";
+
+        IPSearchResponseThread() {
+            super();
+        }
+
+        @Override
+        public void start() {
+            Log.d(TAG,"start()");
+            super.start();
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+        @Override
+        public void run() {
+            int count = 0;
+            Log.d(TAG,"In run(): thread start.");
+            while (count < 10) {
+                Log.d(TAG,"isIPSearchFinished is: " + isIPSearchFinished);
+                //レスポンス受信済の場合、whileループ終了
+                if(isIPSearchFinished){
+                    break;
+                }
+
+                Log.d(TAG,"count is: " + count);
+                Map<String, String> map = new HashMap<>();
+                map.put("ipSearchResponse", "ipSearchResponse"); //UDPパケットの識別子。テストデータ受信時処理に分岐
+                map.put("ip", getWifiIPAddress(MainActivity.this));
+                try {
+                    udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    Thread.sleep(5000);
+                    count++;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+            Log.d(TAG,"In run(): thread end.");
+        }
+    }
 }
