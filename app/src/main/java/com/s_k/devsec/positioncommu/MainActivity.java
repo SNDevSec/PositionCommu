@@ -3,6 +3,7 @@ package com.s_k.devsec.positioncommu;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -27,6 +28,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,6 +58,9 @@ import java.util.concurrent.TimeUnit;
 
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
+
+    SharedPreferences sharedPref;
+    private static final String PREF_FILE_NAME = "DataStore";
 
     TextView tvDistance;
     TextView tvAngle;
@@ -140,19 +145,65 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         globals = (Globals) this.getApplication();
         mHandler = new Handler();
+        sharedPref = getSharedPreferences(PREF_FILE_NAME, MODE_PRIVATE);
 
         WifiManager manager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
         WifiInfo info = manager.getConnectionInfo();
-        int ipAddr = info.getIpAddress();
-        String ipString = String.format(Locale.US, "%d.%d.%d.1",
-                (ipAddr)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff);
+        String ipString = sharedPref.getString("PEER_IP_ADDRESS", "");
+        if(ipString.equals("")){
+            int ipAddr = info.getIpAddress();
+            ipString = String.format(Locale.US, "%d.%d.%d.1",
+                    (ipAddr)&0xff, (ipAddr>>8)&0xff, (ipAddr>>16)&0xff);
+        }
         Log.d("MainActivity", "Initial peer's address is:" + ipString);
         globals.setPeerIPAddress(ipString);
 
         mWifiStatusUpdateThread = new WifiStatusUpdateThread();
         mWifiStatusUpdateThread.start();
 
+        int orientation = getResources().getConfiguration().orientation;
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            // 横向きの場合
+            LinearLayout llMain = findViewById(R.id.llMain);
+            llMain.setOrientation(LinearLayout.HORIZONTAL);
+        }
+
         final CustomView customView = findViewById(R.id.customView);
+        final ViewTreeObserver vto = customView.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                Log.d("MainActivity", "onGlobalLayout()");
+                customViewWidth = findViewById(R.id.customView).getWidth();
+                customViewHeight = findViewById(R.id.customView).getHeight();
+                Log.d("MainActivity", "CustomView幅:"+ customViewWidth);
+                Log.d("MainActivity", "CustomView高:"+ customViewHeight);
+                int orientation = getResources().getConfiguration().orientation;
+                CustomView customView = findViewById(R.id.customView);
+                ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams)customView.getLayoutParams();
+
+                if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    Log.d("MainActivity", "onGlobalLayout():ORIENTATION_PORTRAIT"+ customViewHeight);
+                    // 縦向きの場合
+                    customView.setLayoutParams(marginLayoutParams);
+                }
+
+                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    // 横向きの場合
+                    Log.d("MainActivity", "onGlobalLayout():ORIENTATION_LANDSCAPE"+ customViewHeight);
+                    customViewHeight = customViewWidth;
+                    marginLayoutParams.height = customViewHeight;
+                    Log.d("MainActivity", "CustomView高(修正):"+ customViewHeight);
+                    customView.setLayoutParams(marginLayoutParams);
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                    customView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                } else {
+                    customView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                }
+            }
+        });
 
         tvDistance = findViewById(R.id.tvDistance);
         tvDistance.setText("0");
@@ -175,6 +226,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         tvFixedLongitude = findViewById(R.id.tvFixedLongitude);
 
         tvPeerIpAddress = findViewById(R.id.tvPeerIpAddress);
+        tvPeerIpAddress.setText(globals.getPeerIPAddress());
         tvPeerPortNumber = findViewById(R.id.tvPeerPortNumber);
         tvPeerPortNumber.setText(globals.getPeerPortNumber());
 
@@ -403,43 +455,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 Log.d("MainActivity", "bt_number=4");
                 tvDistance.setText("0");
                 tvAngle.setText("" + angle);
-            }
-        });
-
-        final ViewTreeObserver vto = customView.getViewTreeObserver();
-        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                Log.d("MainActivity", "onGlobalLayout()");
-                customViewWidth = findViewById(R.id.customView).getWidth();
-                customViewHeight = findViewById(R.id.customView).getHeight();
-                Log.d("MainActivity", "CustomView幅:"+ customViewWidth);
-                Log.d("MainActivity", "CustomView高:"+ customViewHeight);
-                int orientation = getResources().getConfiguration().orientation;
-                CustomView customView = findViewById(R.id.customView);
-                ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams)customView.getLayoutParams();
-
-                if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-                    Log.d("MainActivity", "onGlobalLayout():ORIENTATION_PORTRAIT"+ customViewHeight);
-                    // 縦向きの場合
-                    customView.setLayoutParams(marginLayoutParams);
-                }
-
-                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    // 横向きの場合
-                    Log.d("MainActivity", "onGlobalLayout():ORIENTATION_LANDSCAPE"+ customViewHeight);
-                    customViewHeight = customViewWidth;
-                    marginLayoutParams.height = customViewHeight;
-                    Log.d("MainActivity", "CustomView高(修正):"+ customViewHeight);
-                    customView.setLayoutParams(marginLayoutParams);
-                }
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                    customView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                } else {
-                    customView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                }
-
             }
         });
 
