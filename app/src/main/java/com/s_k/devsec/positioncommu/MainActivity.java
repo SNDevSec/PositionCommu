@@ -1249,6 +1249,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             int count = 0;
             Log.d(TAG,"In run(): thread start.");
             while (count < 10) {
+                Log.d(TAG,"count is: " + count);
                 //レスポンス受信済の場合、whileループ終了
                 Log.d(TAG,"isIPSearchResReceived is: " + isIPSearchResReceived);
                 if(isIPSearchResReceived){
@@ -1265,7 +1266,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     break;
                 }
 
-                Log.d(TAG,"count is: " + count);
                 Map<String, String> map = new HashMap<>();
                 map.put("ipSearch", "ipSearch"); //UDPパケットの識別子。テストデータ受信時処理に分岐
                 map.put("ip", getWifiIPAddress(MainActivity.this));
@@ -1279,12 +1279,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 }
 
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(3000);
                     count++;
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
 
+            }
+            if(count == 10){
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, "IP探索がタイムアウトしました", Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
 
             mHandler.post(new Runnable() {
@@ -1320,13 +1328,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             int count = 0;
             Log.d(TAG,"In run(): thread start.");
             while (count < 10) {
+                Log.d(TAG,"count is: " + count);
                 Log.d(TAG,"isIPSearchFinished is: " + isIPSearchFinished);
                 //レスポンス受信済の場合、whileループ終了
                 if(isIPSearchFinished){
                     break;
                 }
 
-                Log.d(TAG,"count is: " + count);
                 Map<String, String> map = new HashMap<>();
                 map.put("ipSearchResponse", "ipSearchResponse"); //UDPパケットの識別子。テストデータ受信時処理に分岐
                 map.put("ip", getWifiIPAddress(MainActivity.this));
@@ -1337,7 +1345,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 }
 
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(3000);
                     count++;
                 } catch (InterruptedException e) {
                     e.printStackTrace();

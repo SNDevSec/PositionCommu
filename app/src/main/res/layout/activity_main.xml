@@ -292,17 +292,17 @@
 
                     <Button
                         android:id="@+id/btFixed"
-                        android:layout_width="70dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="40dp"
                         android:textSize="10sp"
                         android:text="Fix"/>
 
                     <Button
                         android:id="@+id/btFixReset"
-                        android:layout_width="70dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="40dp"
                         android:textSize="10sp"
-                        android:text="Reset"/>
+                        android:text="Fix  Reset"/>
 
                 </LinearLayout>
 
@@ -688,7 +688,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="40dp"
                     android:textSize="10sp"
-                    android:text="AutoSetting"/>
+                    android:text="Auto  Setting"/>
 
             </LinearLayout>
 
