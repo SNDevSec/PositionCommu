@@ -28,6 +28,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -84,18 +85,27 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     TextView tvReceiveCount;
     TextView tvReceiveInterval;
 
-    TextView tvSendDist;
-    TextView tvSendAngle;
+//    TextView tvSendDist;
+//    TextView tvSendAngle;
 
-    Button btSendDemo1;
-    Button btSendDemo2;
-    Button btContStart;
-    Button btContStop;
+    EditText etSendLatitude;
+    EditText etSendLongitude;
+
+//    Button btSendDemo1;
+//    Button btSendDemo2;
+//    Button btContStart;
+//    Button btContStop;
+
     Button btLogStart;
     Button btLogStop;
     Button btPeerIPAutoSetting;
+    Button btAutoSendStart;
+    Button btAutoSendStop;
+    Button btDummyFixed;
+    Button btDummyFixReset;
+    Button btDummySend;
 
-    View mButtonClicked;
+//    View mButtonClicked;
 
     static int customViewWidth;
     static int customViewHeight;
@@ -105,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     UDPReceiverThread mUDPTestReceiver = null;
     WifiStatusUpdateThread mWifiStatusUpdateThread = null;
-    UDPTestContSenderThread mUDPTestCSThread;
+//    UDPTestContSenderThread mUDPTestCSThread;
 
     int REQUEST_CODE_ACCESS_FINE_LOCATION_PERMISSION = 1000;
     int REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION = 1001;
@@ -137,6 +147,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     boolean isFileSaving = false;
     boolean isIPSearchResReceived = false;
     boolean isIPSearchFinished = false;
+
+    boolean isAutoSendEnable = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -238,8 +250,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         tvReceiveCount = findViewById(R.id.tvReceiveCount);
         tvReceiveInterval = findViewById(R.id.tvReceiveInterval);
 
-        tvSendDist = findViewById(R.id.tvSendDist);
-        tvSendAngle = findViewById(R.id.tvSendAngle);
+//        tvSendDist = findViewById(R.id.tvSendDist);
+//        tvSendAngle = findViewById(R.id.tvSendAngle);
+
+        etSendLatitude = findViewById(R.id.etSendLatitude);
+        etSendLongitude = findViewById(R.id.etSendLongitude);
 
         //LOG STARTボタンの動作
         btLogStart = findViewById(R.id.btLogStart);
@@ -388,59 +403,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             }
         });
 
-        btSendDemo1 = findViewById(R.id.btSendDemo1);
-        btSendDemo1.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                dist = "30";
-                angle = "40";
-                tvSendDist.setText(dist);
-                tvSendAngle.setText(angle);
-                mButtonClicked = view;
-                UDPTestSenderThread mUDPSender = new UDPTestSenderThread();
-                mUDPSender.start();
-                btSendDemo1.setEnabled(false);
-            }
-        });
-
-        btSendDemo2 = findViewById(R.id.btSendDemo2);
-        btSendDemo2.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                dist = "10";
-                angle = "-50";
-                tvSendDist.setText(dist);
-                tvSendAngle.setText(angle);
-                mButtonClicked = view;
-                UDPTestSenderThread mUDPSender = new UDPTestSenderThread();
-                mUDPSender.start();
-                btSendDemo2.setEnabled(false);
-            }
-        });
-
-        btContStart = findViewById(R.id.btContStart);
-        btContStart.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                mUDPTestCSThread = new UDPTestContSenderThread();
-                mUDPTestCSThread.start();
-                btContStart.setEnabled(false);
-                btContStop.setEnabled(true);
-                Toast.makeText(MainActivity.this, "連続送信開始", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        btContStop = findViewById(R.id.btContStop);
-        btContStop.setEnabled(false);
-        btContStop.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                mUDPTestCSThread.onStop();
-                btContStop.setEnabled(false);
-                Toast.makeText(MainActivity.this, "連続送信停止", Toast.LENGTH_SHORT).show();
-            }
-        });
-
+        //Resetボタンの動作
         Button btPeerRest = findViewById(R.id.btPeerReset);
         btPeerRest.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -453,51 +416,173 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 tvReceiveInterval.setText("");
             }
         });
-        Button button1 = findViewById(R.id.btDemo1);
-        button1.setOnClickListener(new View.OnClickListener() {
+
+        btAutoSendStart = findViewById(R.id.btAutoSendStart);
+        btAutoSendStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                double angle = 80;
-                customView.showCanvas(false, angle);
-                Log.d("MainActivity", "bt_number=1");
-                tvDistance.setText("10");
-                tvAngle.setText("" + angle);
+                isAutoSendEnable = true;
+                btAutoSendStop.setEnabled(true);
+                btAutoSendStart.setEnabled(false);
             }
         });
-        Button button2 = findViewById(R.id.btDemo2);
-        button2.setOnClickListener(new View.OnClickListener() {
+
+        btAutoSendStop = findViewById(R.id.btAutoSendStop);
+        btAutoSendStop.setEnabled(false);
+        btAutoSendStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                double angle = 60;
-                customView.showCanvas(false, angle);
-                Log.d("MainActivity", "bt_number=2");
-                tvDistance.setText("20");
-                tvAngle.setText("" + angle);
+                isAutoSendEnable = false;
+                btAutoSendStop.setEnabled(false);
+                btAutoSendStart.setEnabled(true);
             }
         });
-        Button button3 = findViewById(R.id.btDemo3);
-        button3.setOnClickListener(new View.OnClickListener() {
+
+        btDummyFixed = findViewById(R.id.btDummyFixed);
+        btDummyFixed.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                double angle = -10;
-                customView.showCanvas(false, angle);
-                Log.d("MainActivity", "bt_number=3");
-                tvDistance.setText("5");
-                tvAngle.setText("" + angle);
-            }
-        });
-        Button button4 = findViewById(R.id.btReset);
-        button4.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                double angle = 0;
+                tvFixedLatitude.setBackgroundColor(Color.argb(255,255,255,255));
+                tvFixedLatitude.setText("0.0000000");
+                tvFixedLongitude.setBackgroundColor(Color.argb(255,255,255,255));
+                tvFixedLongitude.setText("0.0000000");
+                angle = "0";
+                tvAngle.setText(angle);
+                isFixed = true;
+                isFirstReceive = true;
                 CustomView customView = findViewById(R.id.customView);
-                customView.showCanvas(true, angle);
-                Log.d("MainActivity", "bt_number=4");
-                tvDistance.setText("0");
-                tvAngle.setText("" + angle);
+                customView.showCanvas(false, Double.parseDouble(angle));
+                Log.d("btDummyFixed", "Canvas refreshed");
             }
         });
+
+        btDummyFixReset = findViewById(R.id.btDummyFixReset);
+        btDummyFixReset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                tvFixedLatitude.setBackgroundColor(Color.argb(255,255,255,255));
+                tvFixedLatitude.setText("");
+                tvFixedLongitude.setBackgroundColor(Color.argb(255,255,255,255));
+                tvFixedLongitude.setText("");
+                dist = "0";
+                angle = "0";
+                tvDistance.setText(dist);
+                tvAngle.setText(angle);
+                isFixed = false;
+                isFirstReceive = false;
+                CustomView customView = findViewById(R.id.customView);
+                customView.showCanvas(false, Double.parseDouble(angle));
+                Log.d("btDummyFixReset", "Canvas refreshed");
+            }
+        });
+
+        btDummySend = findViewById(R.id.btDummySend);
+        btDummySend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                UDPDummySenderThread mUDPDummySenderThread = new UDPDummySenderThread();
+                mUDPDummySenderThread.start();
+            }
+        });
+
+//        btSendDemo1 = findViewById(R.id.btSendDemo1);
+//        btSendDemo1.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                dist = "30";
+//                angle = "40";
+//                tvSendDist.setText(dist);
+//                tvSendAngle.setText(angle);
+//                mButtonClicked = view;
+//                UDPTestSenderThread mUDPSender = new UDPTestSenderThread();
+//                mUDPSender.start();
+//                btSendDemo1.setEnabled(false);
+//            }
+//        });
+//
+//        btSendDemo2 = findViewById(R.id.btSendDemo2);
+//        btSendDemo2.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                dist = "10";
+//                angle = "-50";
+//                tvSendDist.setText(dist);
+//                tvSendAngle.setText(angle);
+//                mButtonClicked = view;
+//                UDPTestSenderThread mUDPSender = new UDPTestSenderThread();
+//                mUDPSender.start();
+//                btSendDemo2.setEnabled(false);
+//            }
+//        });
+//
+//        btContStart = findViewById(R.id.btContStart);
+//        btContStart.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                mUDPTestCSThread = new UDPTestContSenderThread();
+//                mUDPTestCSThread.start();
+//                btContStart.setEnabled(false);
+//                btContStop.setEnabled(true);
+//                Toast.makeText(MainActivity.this, "連続送信開始", Toast.LENGTH_SHORT).show();
+//            }
+//        });
+//
+//        btContStop = findViewById(R.id.btContStop);
+//        btContStop.setEnabled(false);
+//        btContStop.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                mUDPTestCSThread.onStop();
+//                btContStop.setEnabled(false);
+//                Toast.makeText(MainActivity.this, "連続送信停止", Toast.LENGTH_SHORT).show();
+//            }
+//        });
+//
+//        Button button1 = findViewById(R.id.btDemo1);
+//        button1.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                double angle = 80;
+//                customView.showCanvas(false, angle);
+//                Log.d("MainActivity", "bt_number=1");
+//                tvDistance.setText("10");
+//                tvAngle.setText("" + angle);
+//            }
+//        });
+//        Button button2 = findViewById(R.id.btDemo2);
+//        button2.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                double angle = 60;
+//                customView.showCanvas(false, angle);
+//                Log.d("MainActivity", "bt_number=2");
+//                tvDistance.setText("20");
+//                tvAngle.setText("" + angle);
+//            }
+//        });
+//        Button button3 = findViewById(R.id.btDemo3);
+//        button3.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                double angle = -10;
+//                customView.showCanvas(false, angle);
+//                Log.d("MainActivity", "bt_number=3");
+//                tvDistance.setText("5");
+//                tvAngle.setText("" + angle);
+//            }
+//        });
+//        Button button4 = findViewById(R.id.btReset);
+//        button4.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                double angle = 0;
+//                CustomView customView = findViewById(R.id.customView);
+//                customView.showCanvas(true, angle);
+//                Log.d("MainActivity", "bt_number=4");
+//                tvDistance.setText("0");
+//                tvAngle.setText("" + angle);
+//            }
+//        });
 
         //位置情報取得開始までの手続。
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -565,8 +650,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             lastMeasTime = System.currentTimeMillis();
             tvMeasInterval.setText(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(receiveInterval)));
 
-            UDPMeasSenderThread mUDPMeasSenderThread = new UDPMeasSenderThread();
-            mUDPMeasSenderThread.start();
+            if (isAutoSendEnable) {
+                UDPMeasSenderThread mUDPMeasSenderThread = new UDPMeasSenderThread();
+                mUDPMeasSenderThread.start();
+            }
 
             if(isFileSaving){
                 FileOutputStream fos = null;
@@ -715,7 +802,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     /**
-     * 多種のUDPパケット(テストデータ、測定データ、IPアドレス)を待ち受けるスレッド
+     * あらゆるUDPパケット(テストデータ、測定データ、IPアドレス)を待ち受けるスレッド
      * 受け取ったUDPパケット(Map型オブジェクト)
      */
     class UDPReceiverThread extends Thread {
@@ -1048,13 +1135,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
-    /**
-     * テストデータをUDPパケットにして送信する単発スレッド
-     */
-    class UDPTestSenderThread extends Thread{
-        private static final String TAG="UDPReceiverThread";
 
-        private UDPTestSenderThread(){
+    class UDPDummySenderThread extends Thread{
+        private static final String TAG="UDPDummySenderThread";
+
+        private UDPDummySenderThread(){
             super();
         }
 
@@ -1067,116 +1152,154 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         @Override
         public void run(){
             Log.d(TAG,"In run(): thread start.");
-            final int button_id = mButtonClicked.getId();
-            Map<String, String> map = new HashMap<>();
-            map.put("test", "test"); //UDPパケットの識別子。テストデータ受信時処理に分岐
-            map.put("dist", dist);
-            map.put("angle", angle);
             try {
                 Log.d(TAG,"Peer's IP Address: " + globals.getPeerIPAddress());
+                String sendLatitude = etSendLatitude.getText().toString();
+                String sendLongitude = etSendLongitude.getText().toString();
+                String sendProvider = "dummy";
+                Map<String, String> map = new HashMap<>();
+                map.put("positionInfo", "positionInfo"); //UDPパケットの識別子。測定データ受信時処理に分岐
+                map.put("sendLatitude", sendLatitude);
+                map.put("sendLongitude", sendLongitude);
+                map.put("sendProvider", sendProvider);
+                map.put("model", Build.MODEL);
                 udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(MainActivity.this, "送信済", Toast.LENGTH_SHORT).show();
-                    switch (button_id) {
-                        case R.id.btSendDemo1:
-                            btSendDemo1.setEnabled(true);
-                            break;
-                        case R.id.btSendDemo2:
-                            btSendDemo2.setEnabled(true);
-                            break;
-                    }
-
-                }
-            });
             Log.d(TAG,"In run(): thread end.");
-
         }
     }
 
     /**
+     * テストデータをUDPパケットにして送信する単発スレッド
+     */
+//    class UDPTestSenderThread extends Thread{
+//        private static final String TAG="UDPTestSenderThread";
+//
+//        private UDPTestSenderThread(){
+//            super();
+//        }
+//
+//        @Override
+//        public void start() {
+//            super.start();
+//        }
+//
+//        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+//        @Override
+//        public void run(){
+//            Log.d(TAG,"In run(): thread start.");
+//            final int button_id = mButtonClicked.getId();
+//            Map<String, String> map = new HashMap<>();
+//            map.put("test", "test"); //UDPパケットの識別子。テストデータ受信時処理に分岐
+//            map.put("dist", dist);
+//            map.put("angle", angle);
+//            try {
+//                Log.d(TAG,"Peer's IP Address: " + globals.getPeerIPAddress());
+//                udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//            mHandler.post(new Runnable() {
+//                @Override
+//                public void run() {
+//                    Toast.makeText(MainActivity.this, "送信済", Toast.LENGTH_SHORT).show();
+//                    switch (button_id) {
+//                        case R.id.btSendDemo1:
+//                            btSendDemo1.setEnabled(true);
+//                            break;
+//                        case R.id.btSendDemo2:
+//                            btSendDemo2.setEnabled(true);
+//                            break;
+//                    }
+//
+//                }
+//            });
+//            Log.d(TAG,"In run(): thread end.");
+//
+//        }
+//    }
+
+    /**
      * スレッド有効期間中、テストデータを送信し続けるスレッド
      */
-    class UDPTestContSenderThread extends Thread{
-        private static final String TAG="UDPTestContSenderThread";
-        boolean mIsAlive = false;
-
-        private UDPTestContSenderThread(){
-            super();
-        }
-
-        @Override
-        public void start() {
-            Log.d(TAG,"start()");
-            mIsAlive = true;
-            Log.d(TAG,"mIsAlive status:"+ mIsAlive);
-            super.start();
-        }
-
-        void onStop() {
-            Log.d(TAG,"onStop()");
-            mIsAlive = false;
-            Log.d(TAG,"mIsAlive status:"+ mIsAlive);
-        }
-
-        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-        @Override
-        public void run(){
-            Log.d(TAG,"In run(): thread start.");
-            int cnt = -60;
-            boolean reverse = false;
-            try {
-                while(mIsAlive){
-                    dist = String.valueOf(cnt);
-                    angle= String.valueOf(cnt);
-                    Map<String, String> map = new HashMap<>();
-                    map.put("test", "test"); //UDPパケットの識別子。テストデータ受信時処理に分岐
-                    map.put("dist", dist);
-                    map.put("angle", angle);
-                    udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
-                    if(!reverse) {
-                        if (cnt != 60) {
-                            cnt += 10;
-                        } else {
-                            reverse = true;
-                            cnt -= 10;
-                        }
-                    }else {
-                        if (cnt != -60) {
-                            cnt -= 10;
-                        } else {
-                            reverse = false;
-                            cnt += 10;
-                        }
-                    }
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            tvSendDist.setText(dist);
-                            tvSendAngle.setText(angle);
-                        }
-                    });
-                    Thread.sleep(1000);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    btContStart.setEnabled(true);
-                    Toast.makeText(MainActivity.this, "連続送信スレッド停止", Toast.LENGTH_SHORT).show();
-                }
-            });
-            Log.d(TAG,"In run(): thread end.");
-        }
-    }
+//    class UDPTestContSenderThread extends Thread{
+//        private static final String TAG="UDPTestContSenderThread";
+//        boolean mIsAlive = false;
+//
+//        private UDPTestContSenderThread(){
+//            super();
+//        }
+//
+//        @Override
+//        public void start() {
+//            Log.d(TAG,"start()");
+//            mIsAlive = true;
+//            Log.d(TAG,"mIsAlive status:"+ mIsAlive);
+//            super.start();
+//        }
+//
+//        void onStop() {
+//            Log.d(TAG,"onStop()");
+//            mIsAlive = false;
+//            Log.d(TAG,"mIsAlive status:"+ mIsAlive);
+//        }
+//
+//        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+//        @Override
+//        public void run(){
+//            Log.d(TAG,"In run(): thread start.");
+//            int cnt = -60;
+//            boolean reverse = false;
+//            try {
+//                while(mIsAlive){
+//                    dist = String.valueOf(cnt);
+//                    angle= String.valueOf(cnt);
+//                    Map<String, String> map = new HashMap<>();
+//                    map.put("test", "test"); //UDPパケットの識別子。テストデータ受信時処理に分岐
+//                    map.put("dist", dist);
+//                    map.put("angle", angle);
+//                    udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
+//                    if(!reverse) {
+//                        if (cnt != 60) {
+//                            cnt += 10;
+//                        } else {
+//                            reverse = true;
+//                            cnt -= 10;
+//                        }
+//                    }else {
+//                        if (cnt != -60) {
+//                            cnt -= 10;
+//                        } else {
+//                            reverse = false;
+//                            cnt += 10;
+//                        }
+//                    }
+//                    mHandler.post(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            tvSendDist.setText(dist);
+//                            tvSendAngle.setText(angle);
+//                        }
+//                    });
+//                    Thread.sleep(1000);
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            mHandler.post(new Runnable() {
+//                @Override
+//                public void run() {
+//                    btContStart.setEnabled(true);
+//                    Toast.makeText(MainActivity.this, "連続送信スレッド停止", Toast.LENGTH_SHORT).show();
+//                }
+//            });
+//            Log.d(TAG,"In run(): thread end.");
+//        }
+//    }
 
     /**
      * 接続先WiFiが変わったら自動的にアプリ上の自端末IP表示を更新するスレッド
