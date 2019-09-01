@@ -448,6 +448,59 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:text="Latitude(Initial)"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/background_light"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true">
+                            <requestFocus />
+                        </TextView>
+
+                        <TextView
+                            android:id="@+id/tvPeerInitLatitude"
+                            android:layout_width="180dp"
+                            android:layout_height="wrap_content"
+                            android:background="@android:color/background_light"
+                            android:text=""
+                            android:textSize="20sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="5dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Longitude(Initial)"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/background_light" />
+
+                        <TextView
+                            android:id="@+id/tvPeerInitLongitude"
+                            android:layout_width="180dp"
+                            android:layout_height="wrap_content"
+                            android:background="@android:color/background_light"
+                            android:text=""
+                            android:textSize="20sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
                             android:text="Latitude"
                             android:textSize="12sp"
                             android:textColor="@android:color/background_light"
@@ -623,7 +676,8 @@
                             android:layout_height="wrap_content"
                             android:background="@android:color/background_light"
                             android:text="0.0000000"
-                            android:textSize="20sp" />
+                            android:textSize="20sp"
+                            android:inputType="phone" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -645,7 +699,8 @@
                             android:layout_height="wrap_content"
                             android:background="@android:color/background_light"
                             android:text="0.0000000"
-                            android:textSize="20sp" />
+                            android:textSize="20sp"
+                            android:inputType="phone" />
                     </LinearLayout>
                 </LinearLayout>
 

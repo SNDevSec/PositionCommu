@@ -79,6 +79,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     TextView tvPeerIpAddress;
     TextView tvPeerPortNumber;
+    TextView tvPeerInitLatitude;
+    TextView tvPeerInitLongitude;
     TextView tvPeerLatitude;
     TextView tvPeerLongitude;
     TextView tvPeerProvider;
@@ -244,6 +246,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         tvPeerPortNumber = findViewById(R.id.tvPeerPortNumber);
         tvPeerPortNumber.setText(globals.getPeerPortNumber());
 
+        tvPeerInitLatitude = findViewById(R.id.tvPeerInitLatitude);
+        tvPeerInitLongitude = findViewById(R.id.tvPeerInitLongitude);
         tvPeerLatitude = findViewById(R.id.tvPeerLatitude);
         tvPeerLongitude = findViewById(R.id.tvPeerLongitude);
         tvPeerProvider = findViewById(R.id.tvPeerProvider);
@@ -438,24 +442,29 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             }
         });
 
+        //DummyFixedボタンの動作
         btDummyFixed = findViewById(R.id.btDummyFixed);
         btDummyFixed.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                fixedLatitude = 0;
+                fixedLongitude = 0;
                 tvFixedLatitude.setBackgroundColor(Color.argb(255,255,255,255));
-                tvFixedLatitude.setText("0.0000000");
+                tvFixedLatitude.setText(String.valueOf(fixedLatitude));
                 tvFixedLongitude.setBackgroundColor(Color.argb(255,255,255,255));
-                tvFixedLongitude.setText("0.0000000");
+                tvFixedLongitude.setText(String.valueOf(fixedLongitude));
                 angle = "0";
                 tvAngle.setText(angle);
                 isFixed = true;
                 isFirstReceive = true;
+                Log.d("btDummyFixed", "isFixed:" +isFixed);
                 CustomView customView = findViewById(R.id.customView);
                 customView.showCanvas(false, Double.parseDouble(angle));
                 Log.d("btDummyFixed", "Canvas refreshed");
             }
         });
 
+        //DummyResetボタンの動作
         btDummyFixReset = findViewById(R.id.btDummyFixReset);
         btDummyFixReset.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -476,6 +485,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             }
         });
 
+        //DummySendボタンの動作
         btDummySend = findViewById(R.id.btDummySend);
         btDummySend.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -635,7 +645,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d("MainActivity", "onLocationChanged():" + " Provider:" + location.getProvider() + " Acc:" + location.getAccuracy());
+//        Log.d("MainActivity", "onLocationChanged():" + " Provider:" + location.getProvider() + " Acc:" + location.getAccuracy());
         if (isMeasStart) {
             latitude = location.getLatitude();
             longitude = location.getLongitude();
@@ -978,12 +988,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             //自己緯度経度、受信緯度経度から距離、角度算出
                             //常に方位角は計算が必要なので、⊿x、⊿yは毎回求める
                             double dLatitude = (Double.parseDouble(sendLatitude) - fixedLatitude) * (Math.PI / 180); //緯度変位[rad]
+                            Log.d(TAG, "dLatitude is:" + dLatitude);
                             double dLongitude = (Double.parseDouble(sendLongitude) - fixedLongitude) * (Math.PI / 180); //経度変位[rad]
+                            Log.d(TAG, "dLongitude is:" + dLongitude);
                             double dy = EARTHRADIUS * dLatitude; //緯度方向変位距離
                             double dx = EARTHRADIUS * Math.cos(fixedLatitude) * dLongitude; //経度方向変位距離
                             long length = Math.round(Math.sqrt((dx*dx + dy*dy)));
                             double angle2 = Math.atan((dy/dx)) * 180 / Math.PI;
+                            Log.d(TAG, "angle2 is:" + angle2);
                             dist = String.valueOf(length);
+                            Log.d(TAG, "dist is: " + dist);
 
                             Log.d(TAG, "isFirstReceive is:" + isFirstReceive);
                             if(isFirstReceive) {
@@ -994,6 +1008,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                     public void run() {
                                         tvFixedLatitude.setBackgroundColor(Color.argb(255,255,250,205));
                                         tvFixedLongitude.setBackgroundColor(Color.argb(255,255,250,205));
+                                        tvPeerInitLatitude.setText(sendLatitude);
+                                        tvPeerInitLongitude.setText(sendLongitude);
                                         tvDistance.setText(dist);
                                         tvAngle.setText(angle);
                                         CustomView customView = findViewById(R.id.customView);
@@ -1003,8 +1019,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                 });
                                 isFirstReceive = false;
                             } else {
+                                Log.d(TAG, "isFirstReceive is:" + isFirstReceive);
+                                Log.d(TAG, "initAngle is:" + initAngle);
                                 angle2 = - (initAngle - angle2);
+                                Log.d(TAG, "angle2(modified) is:" + angle2);
                                 angle = String.valueOf(Math.round(angle2));
+                                Log.d(TAG, "angle is:" + angle);
                                 final double canvasAngle = angle2;
                                 mHandler.post(new Runnable() { //画面更新
                                     @Override
