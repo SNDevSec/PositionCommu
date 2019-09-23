@@ -365,6 +365,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 CustomView customView = findViewById(R.id.customView);
                 customView.showCanvas(false, Double.parseDouble(angle));
                 Log.d("btFixed", "Canvas refreshed");
+                btDummyFixed.setEnabled(true);
             }
         });
 
@@ -387,6 +388,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 CustomView customView = findViewById(R.id.customView);
                 customView.showCanvas(false, Double.parseDouble(angle));
                 Log.d("btFixReset", "Canvas refreshed");
+                tvPeerInitLatitude.setText("");
+                tvPeerInitLongitude.setText("");
+                btDummyFixed.setEnabled(false);
             }
         });
 
@@ -447,43 +451,33 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         btDummyFixed.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                fixedLatitude = 0;
-                fixedLongitude = 0;
-                tvFixedLatitude.setBackgroundColor(Color.argb(255,255,255,255));
-                tvFixedLatitude.setText(String.valueOf(fixedLatitude));
-                tvFixedLongitude.setBackgroundColor(Color.argb(255,255,255,255));
-                tvFixedLongitude.setText(String.valueOf(fixedLongitude));
-                angle = "0";
-                tvAngle.setText(angle);
-                isFixed = true;
-                isFirstReceive = true;
-                Log.d("btDummyFixed", "isFixed:" +isFixed);
-                CustomView customView = findViewById(R.id.customView);
-                customView.showCanvas(false, Double.parseDouble(angle));
-                Log.d("btDummyFixed", "Canvas refreshed");
+                UDPAutoFixThread mUDPAutoFixThread = new UDPAutoFixThread();
+                mUDPAutoFixThread.start();
+                Toast.makeText(MainActivity.this, "Peerデバイス自動設定開始", Toast.LENGTH_SHORT).show();
             }
         });
+        btDummyFixed.setEnabled(false);
 
-        //DummyResetボタンの動作
-        btDummyFixReset = findViewById(R.id.btDummyFixReset);
-        btDummyFixReset.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                tvFixedLatitude.setBackgroundColor(Color.argb(255,255,255,255));
-                tvFixedLatitude.setText("");
-                tvFixedLongitude.setBackgroundColor(Color.argb(255,255,255,255));
-                tvFixedLongitude.setText("");
-                dist = "0";
-                angle = "0";
-                tvDistance.setText(dist);
-                tvAngle.setText(angle);
-                isFixed = false;
-                isFirstReceive = false;
-                CustomView customView = findViewById(R.id.customView);
-                customView.showCanvas(false, Double.parseDouble(angle));
-                Log.d("btDummyFixReset", "Canvas refreshed");
-            }
-        });
+//        //DummyResetボタンの動作
+//        btDummyFixReset = findViewById(R.id.btDummyFixReset);
+//        btDummyFixReset.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                tvFixedLatitude.setBackgroundColor(Color.argb(255,255,255,255));
+//                tvFixedLatitude.setText("");
+//                tvFixedLongitude.setBackgroundColor(Color.argb(255,255,255,255));
+//                tvFixedLongitude.setText("");
+//                dist = "0";
+//                angle = "0";
+//                tvDistance.setText(dist);
+//                tvAngle.setText(angle);
+//                isFixed = false;
+//                isFirstReceive = false;
+//                CustomView customView = findViewById(R.id.customView);
+//                customView.showCanvas(false, Double.parseDouble(angle));
+//                Log.d("btDummyFixReset", "Canvas refreshed");
+//            }
+//        });
 
         //DummySendボタンの動作
         btDummySend = findViewById(R.id.btDummySend);
@@ -992,12 +986,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             double dLongitude = (Double.parseDouble(sendLongitude) - fixedLongitude) * (Math.PI / 180); //経度変位[rad]
                             Log.d(TAG, "dLongitude is:" + dLongitude);
                             double dy = EARTHRADIUS * dLatitude; //緯度方向変位距離
+                            Log.d(TAG, "dy is:" + dy);
                             double dx = EARTHRADIUS * Math.cos(fixedLatitude) * dLongitude; //経度方向変位距離
+                            Log.d(TAG, "dx is:" + dx);
                             long length = Math.round(Math.sqrt((dx*dx + dy*dy)));
+                            Log.d(TAG, "length is:" + length);
                             double angle2 = Math.atan((dy/dx)) * 180 / Math.PI;
                             Log.d(TAG, "angle2 is:" + angle2);
                             dist = String.valueOf(length);
-                            Log.d(TAG, "dist is: " + dist);
 
                             Log.d(TAG, "isFirstReceive is:" + isFirstReceive);
                             if(isFirstReceive) {
@@ -1019,13 +1015,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                 });
                                 isFirstReceive = false;
                             } else {
-                                Log.d(TAG, "isFirstReceive is:" + isFirstReceive);
                                 Log.d(TAG, "initAngle is:" + initAngle);
-                                angle2 = - (initAngle - angle2);
-                                Log.d(TAG, "angle2(modified) is:" + angle2);
-                                angle = String.valueOf(Math.round(angle2));
+                                double dAngle = - (initAngle - angle2);
+                                Log.d(TAG, "dAngle is:" + dAngle);
+                                angle = String.valueOf(Math.round(dAngle));
                                 Log.d(TAG, "angle is:" + angle);
-                                final double canvasAngle = angle2;
+                                final double canvasAngle = dAngle;
                                 mHandler.post(new Runnable() { //画面更新
                                     @Override
                                     public void run() {
@@ -1101,6 +1096,29 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                 }
                             });
                         }
+                    }else if(receiveMap.containsKey("autofix")){
+                        final String sendLatitude = receiveMap.get("sendLatitude");
+                        Log.d(TAG,"sendLatitude: " + sendLatitude);
+                        final String sendLongitude = receiveMap.get("sendLongitude");
+                        Log.d(TAG,"sendLongitude: " + sendLongitude);
+                        final String sendProvider = receiveMap.get("sendProvider");
+                        Log.d(TAG,"sendProvider: " + sendLongitude);
+                        final String model = receiveMap.get("model");
+
+                        //受け取った観測側のポジションをPeer側のダミー送信窓にセットする。
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                etSendLatitude.setText(sendLatitude);
+                                etSendLongitude.setText(sendLongitude);
+                                Toast.makeText(MainActivity.this, "PeerデバイスからFix位置情報を受信しました", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+
+//                        sleep(500);
+//                        //Peer側から一度ポジションを送り、観測側のisFirstReceiveフラグを立てる
+//                        UDPDummySenderThread mUDPDummySenderThread = new UDPDummySenderThread();
+//                        mUDPDummySenderThread.start();
                     }
 
                 }
@@ -1179,6 +1197,41 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 String sendProvider = "dummy";
                 Map<String, String> map = new HashMap<>();
                 map.put("positionInfo", "positionInfo"); //UDPパケットの識別子。測定データ受信時処理に分岐
+                map.put("sendLatitude", sendLatitude);
+                map.put("sendLongitude", sendLongitude);
+                map.put("sendProvider", sendProvider);
+                map.put("model", Build.MODEL);
+                udpSend(map, globals.getPeerIPAddress(), Integer.parseInt(globals.getPeerPortNumber()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Log.d(TAG,"In run(): thread end.");
+        }
+    }
+
+    class UDPAutoFixThread extends Thread{
+        private static final String TAG="UDPAutoFixThread";
+
+        private UDPAutoFixThread(){
+            super();
+        }
+
+        @Override
+        public void start() {
+            super.start();
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+        @Override
+        public void run(){
+            Log.d(TAG,"In run(): thread start.");
+            try {
+                Log.d(TAG,"Peer's IP Address: " + globals.getPeerIPAddress());
+                String sendLatitude = String.valueOf(fixedLatitude);
+                String sendLongitude = String.valueOf(fixedLongitude);
+                String sendProvider = "dummy";
+                Map<String, String> map = new HashMap<>();
+                map.put("autofix", "autofix"); //UDPパケットの識別子。測定データ受信時処理に分岐
                 map.put("sendLatitude", sendLatitude);
                 map.put("sendLongitude", sendLongitude);
                 map.put("sendProvider", sendProvider);

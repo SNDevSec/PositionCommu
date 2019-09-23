@@ -38,16 +38,16 @@
                     android:background="#00ffffff"
                     android:text="@string/tv_distance"
                     android:textColor="#000000"
-                    android:textSize="30sp" />
+                    android:textSize="25sp" />
 
                 <TextView
                     android:id="@+id/tvDistance"
-                    android:layout_width="50dp"
+                    android:layout_width="100dp"
                     android:layout_height="wrap_content"
                     android:background="#00ffffff"
                     android:text=""
                     android:textColor="#000000"
-                    android:textSize="30sp"
+                    android:textSize="25sp"
                     android:gravity="end"/>
 
                 <TextView
@@ -58,7 +58,7 @@
                     android:background="#00ffffff"
                     android:text="m"
                     android:textColor="#000000"
-                    android:textSize="30sp" />
+                    android:textSize="25sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -74,17 +74,17 @@
                     android:background="#00ffffff"
                     android:text="@string/tv_angle"
                     android:textColor="#000000"
-                    android:textSize="30sp" />
+                    android:textSize="25sp" />
 
                 <TextView
                     android:id="@+id/tvAngle"
-                    android:layout_width="50dp"
+                    android:layout_width="100dp"
                     android:layout_height="wrap_content"
                     android:background="#00ffffff"
                     android:text=""
                     android:textColor="#000000"
-                    android:textSize="30sp"
-                    android:gravity="end"/>
+                    android:textSize="25sp"
+                    android:gravity="end" />
 
                 <TextView
                     android:layout_width="40dp"
@@ -94,7 +94,7 @@
                     android:background="#00ffffff"
                     android:text="°"
                     android:textColor="#000000"
-                    android:textSize="30sp" />
+                    android:textSize="25sp" />
             </LinearLayout>
         </LinearLayout>
 
@@ -305,6 +305,13 @@
                         android:textSize="10sp"
                         android:text="Auto_Send_Stop"/>
 
+                </LinearLayout>
+
+                    <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
                     <Button
                         android:id="@+id/btFixed"
                         android:layout_width="wrap_content"
@@ -398,14 +405,14 @@
                         android:layout_width="wrap_content"
                         android:layout_height="40dp"
                         android:textSize="10sp"
-                        android:text="Dummy_Fix"/>
+                        android:text="Fix Positin Send"/>
 
-                    <Button
-                        android:id="@+id/btDummyFixReset"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:textSize="10sp"
-                        android:text="Dummy_Fix_Reset"/>
+<!--                    <Button-->
+<!--                        android:id="@+id/btDummyFixReset"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="40dp"-->
+<!--                        android:textSize="10sp"-->
+<!--                        android:text="Dummy_Fix_Reset"/>-->
 
                 </LinearLayout>
 
