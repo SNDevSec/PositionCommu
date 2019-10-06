@@ -176,11 +176,7 @@
                             android:layout_height="wrap_content"
                             android:text="Latitude"
                             android:textSize="12sp"
-                            android:textColor="@android:color/background_light"
-                            android:focusable="true"
-                            android:focusableInTouchMode="true">
-                            <requestFocus />
-                        </TextView>
+                            android:textColor="@android:color/background_light"/>
 
                         <TextView
                             android:id="@+id/tvLatitude"
@@ -357,11 +353,7 @@
                             android:layout_height="wrap_content"
                             android:text="Latitude"
                             android:textSize="12sp"
-                            android:textColor="@android:color/background_light"
-                            android:focusable="true"
-                            android:focusableInTouchMode="true">
-                            <requestFocus />
-                        </TextView>
+                            android:textColor="@android:color/background_light"/>
 
                         <TextView
                             android:id="@+id/tvFixedLatitude"
@@ -401,11 +393,11 @@
                     android:orientation="horizontal">
 
                     <Button
-                        android:id="@+id/btDummyFixed"
+                        android:id="@+id/btFixedPositionSend"
                         android:layout_width="wrap_content"
                         android:layout_height="40dp"
                         android:textSize="10sp"
-                        android:text="Fix Positin Send"/>
+                        android:text="Fixed Position Send"/>
 
 <!--                    <Button-->
 <!--                        android:id="@+id/btDummyFixReset"-->
@@ -457,11 +449,7 @@
                             android:layout_height="wrap_content"
                             android:text="Latitude(Initial)"
                             android:textSize="12sp"
-                            android:textColor="@android:color/background_light"
-                            android:focusable="true"
-                            android:focusableInTouchMode="true">
-                            <requestFocus />
-                        </TextView>
+                            android:textColor="@android:color/background_light"/>
 
                         <TextView
                             android:id="@+id/tvPeerInitLatitude"
@@ -510,11 +498,7 @@
                             android:layout_height="wrap_content"
                             android:text="Latitude"
                             android:textSize="12sp"
-                            android:textColor="@android:color/background_light"
-                            android:focusable="true"
-                            android:focusableInTouchMode="true">
-                            <requestFocus />
-                        </TextView>
+                            android:textColor="@android:color/background_light"/>
 
                         <TextView
                             android:id="@+id/tvPeerLatitude"
@@ -671,11 +655,7 @@
                             android:layout_height="wrap_content"
                             android:text="Latitude"
                             android:textSize="12sp"
-                            android:textColor="@android:color/background_light"
-                            android:focusable="true"
-                            android:focusableInTouchMode="true">
-                            <requestFocus />
-                        </TextView>
+                            android:textColor="@android:color/background_light"/>
 
                         <EditText
                             android:id="@+id/etSendLatitude"

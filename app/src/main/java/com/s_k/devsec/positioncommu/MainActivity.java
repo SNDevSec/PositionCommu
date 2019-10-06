@@ -55,6 +55,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 
@@ -103,8 +104,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     Button btPeerIPAutoSetting;
     Button btAutoSendStart;
     Button btAutoSendStop;
-    Button btDummyFixed;
-    Button btDummyFixReset;
+    Button btFixedPositionSend;
     Button btDummySend;
 
 //    View mButtonClicked;
@@ -365,7 +365,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 CustomView customView = findViewById(R.id.customView);
                 customView.showCanvas(false, Double.parseDouble(angle));
                 Log.d("btFixed", "Canvas refreshed");
-                btDummyFixed.setEnabled(true);
+                btFixedPositionSend.setEnabled(true);
             }
         });
 
@@ -390,7 +390,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 Log.d("btFixReset", "Canvas refreshed");
                 tvPeerInitLatitude.setText("");
                 tvPeerInitLongitude.setText("");
-                btDummyFixed.setEnabled(false);
+                btFixedPositionSend.setEnabled(false);
             }
         });
 
@@ -446,9 +446,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             }
         });
 
-        //DummyFixedボタンの動作
-        btDummyFixed = findViewById(R.id.btDummyFixed);
-        btDummyFixed.setOnClickListener(new View.OnClickListener() {
+        //FixedPositionSendボタンの動作
+        btFixedPositionSend = findViewById(R.id.btFixedPositionSend);
+        btFixedPositionSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 UDPAutoFixThread mUDPAutoFixThread = new UDPAutoFixThread();
@@ -456,28 +456,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 Toast.makeText(MainActivity.this, "Peerデバイス自動設定開始", Toast.LENGTH_SHORT).show();
             }
         });
-        btDummyFixed.setEnabled(false);
-
-//        //DummyResetボタンの動作
-//        btDummyFixReset = findViewById(R.id.btDummyFixReset);
-//        btDummyFixReset.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                tvFixedLatitude.setBackgroundColor(Color.argb(255,255,255,255));
-//                tvFixedLatitude.setText("");
-//                tvFixedLongitude.setBackgroundColor(Color.argb(255,255,255,255));
-//                tvFixedLongitude.setText("");
-//                dist = "0";
-//                angle = "0";
-//                tvDistance.setText(dist);
-//                tvAngle.setText(angle);
-//                isFixed = false;
-//                isFirstReceive = false;
-//                CustomView customView = findViewById(R.id.customView);
-//                customView.showCanvas(false, Double.parseDouble(angle));
-//                Log.d("btDummyFixReset", "Canvas refreshed");
-//            }
-//        });
+        btFixedPositionSend.setEnabled(false);
 
         //DummySendボタンの動作
         btDummySend = findViewById(R.id.btDummySend);
@@ -852,6 +831,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
 
         // 受信用スレッドのメイン関数
+        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
         @Override
         public void run() {
             // スレッドループ開始
@@ -868,6 +848,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                         ObjectInput in = new ObjectInputStream(bis);
                         receiveMap = (Map<String, String>)in.readObject();
                     }catch (Exception ex) {
+                        ex.printStackTrace();
                     }
                     Log.d(TAG,"In run(): packet received :" + receiveMap);
 
@@ -894,152 +875,74 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                         final String sendLongitude = receiveMap.get("sendLongitude");
                         Log.d(TAG,"sendLongitude: " + sendLongitude);
                         final String sendProvider = receiveMap.get("sendProvider");
-                        Log.d(TAG,"sendProvider: " + sendLongitude);
+                        Log.d(TAG,"sendProvider: " + "\"" + sendProvider + "\"");
                         final String model = receiveMap.get("model");
 
-                        receiveCount++;
-                        mHandler.post(new Runnable() { //画面更新
-                            @Override
-                            public void run() {
-                                tvPeerLatitude.setText(sendLatitude);
-                                tvPeerLongitude.setText(sendLongitude);
-                                tvPeerProvider.setText(sendProvider);
-                                tvReceiveCount.setText(String.valueOf(receiveCount));
-                            }
-                        });
-                        if(lastReceiveTime == 0){
-                            mHandler.post(new Runnable() {
+                        String str = "network";
+                        if(Objects.equals(sendProvider, str)){
+                            Log.d(TAG,"networkに一致、処理終了");
+                            //処理無し
+                        }else{
+                            receiveCount++;
+                            mHandler.post(new Runnable() { //画面更新
                                 @Override
                                 public void run() {
-                                    tvReceiveInterval.setText("0");
+                                    tvPeerLatitude.setText(sendLatitude);
+                                    tvPeerLongitude.setText(sendLongitude);
+                                    tvPeerProvider.setText(sendProvider);
+                                    tvReceiveCount.setText(String.valueOf(receiveCount));
                                 }
                             });
-                            lastReceiveTime = System.currentTimeMillis();
-                        }else {
-                            receiveInterval = System.currentTimeMillis() - lastReceiveTime;
-                            lastReceiveTime = System.currentTimeMillis();
-                            mHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    tvReceiveInterval.setText(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(receiveInterval)));
-                                }
-                            });
-                        }
-
-                        if(isFileSaving){
-                            if(fileWriteCount == 0){
-                                receiveLogName += model + ".txt";
-                                Log.d(TAG, "receiveLogName is:" + receiveLogName);
-                            }
-                            FileOutputStream fos = null;
-                            try {
-                                fos = new FileOutputStream(new File(receiveLogName),true);
-                                BufferedWriter bf = new BufferedWriter(new OutputStreamWriter(fos));
-
-                                if(fileWriteCount == 0){
-                                    bf.write("Date, ");
-                                    bf.write("Latitude, ");
-                                    bf.write("Longitude, ");
-                                    bf.write("Provider, ");
-                                    bf.write("Interval, ");
-                                    bf.write("dist, ");
-                                    bf.write("angle\n");
-                                }
-                                Date d = new Date();
-                                SimpleDateFormat sdf = new SimpleDateFormat("yy/MM/dd/_HH:mm:ss", Locale.US);
-                                String dEdit = sdf.format(d);
-                                bf.write(dEdit + ", ");
-                                bf.write(sendLatitude + ", ");
-                                bf.write(sendLongitude + ", ");
-                                bf.write(sendProvider + ", ");
-                                bf.write(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(receiveInterval)) + ", ");
-                                if(!isFixed){
-                                    bf.write(", ");
-                                    bf.write("\n");
-                                }
-                                bf.flush();
-                                bf.close();
-
-                                Log.d(TAG, "Received Log File written.");
-
-                            } catch (FileNotFoundException e) {
-                                e.printStackTrace();
-                            }
-                            catch (IOException e) {
-                                e.printStackTrace();
-                            } finally {
-                                try {
-                                    if(fos != null)
-                                        fos.close();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                            fileWriteCount++;
-                        }
-
-                        if(isFixed){
-                            //自己緯度経度、受信緯度経度から距離、角度算出
-                            //常に方位角は計算が必要なので、⊿x、⊿yは毎回求める
-                            double dLatitude = (Double.parseDouble(sendLatitude) - fixedLatitude) * (Math.PI / 180); //緯度変位[rad]
-                            Log.d(TAG, "dLatitude is:" + dLatitude);
-                            double dLongitude = (Double.parseDouble(sendLongitude) - fixedLongitude) * (Math.PI / 180); //経度変位[rad]
-                            Log.d(TAG, "dLongitude is:" + dLongitude);
-                            double dy = EARTHRADIUS * dLatitude; //緯度方向変位距離
-                            Log.d(TAG, "dy is:" + dy);
-                            double dx = EARTHRADIUS * Math.cos(fixedLatitude) * dLongitude; //経度方向変位距離
-                            Log.d(TAG, "dx is:" + dx);
-                            long length = Math.round(Math.sqrt((dx*dx + dy*dy)));
-                            Log.d(TAG, "length is:" + length);
-                            double angle2 = Math.atan((dy/dx)) * 180 / Math.PI;
-                            Log.d(TAG, "angle2 is:" + angle2);
-                            dist = String.valueOf(length);
-
-                            Log.d(TAG, "isFirstReceive is:" + isFirstReceive);
-                            if(isFirstReceive) {
-                                initAngle = angle2;
-                                Log.d(TAG, "initAngle is:" + initAngle);
-                                mHandler.post(new Runnable() { //画面更新
+                            if (lastReceiveTime == 0) {
+                                mHandler.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        tvFixedLatitude.setBackgroundColor(Color.argb(255,255,250,205));
-                                        tvFixedLongitude.setBackgroundColor(Color.argb(255,255,250,205));
-                                        tvPeerInitLatitude.setText(sendLatitude);
-                                        tvPeerInitLongitude.setText(sendLongitude);
-                                        tvDistance.setText(dist);
-                                        tvAngle.setText(angle);
-                                        CustomView customView = findViewById(R.id.customView);
-                                        customView.showCanvas(false, Double.parseDouble(angle));
-                                        Log.d(TAG, "In run(): Canvas refreshed");
+                                        tvReceiveInterval.setText("0");
                                     }
                                 });
-                                isFirstReceive = false;
+                                lastReceiveTime = System.currentTimeMillis();
                             } else {
-                                Log.d(TAG, "initAngle is:" + initAngle);
-                                double dAngle = - (initAngle - angle2);
-                                Log.d(TAG, "dAngle is:" + dAngle);
-                                angle = String.valueOf(Math.round(dAngle));
-                                Log.d(TAG, "angle is:" + angle);
-                                final double canvasAngle = dAngle;
-                                mHandler.post(new Runnable() { //画面更新
+                                receiveInterval = System.currentTimeMillis() - lastReceiveTime;
+                                lastReceiveTime = System.currentTimeMillis();
+                                mHandler.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        tvDistance.setText(dist);
-                                        tvAngle.setText(angle);
-                                        CustomView customView = findViewById(R.id.customView);
-                                        customView.showCanvas(false, canvasAngle);
-                                        Log.d(TAG, "In run(): Canvas refreshed");
+                                        tvReceiveInterval.setText(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(receiveInterval)));
                                     }
                                 });
                             }
-                            if(isFileSaving){
+
+                            if (isFileSaving) {
+                                if (fileWriteCount == 0) {
+                                    receiveLogName += model + ".txt";
+                                    Log.d(TAG, "receiveLogName is:" + receiveLogName);
+                                }
                                 FileOutputStream fos = null;
                                 try {
-                                    fos = new FileOutputStream(new File(receiveLogName),true);
+                                    fos = new FileOutputStream(new File(receiveLogName), true);
                                     BufferedWriter bf = new BufferedWriter(new OutputStreamWriter(fos));
 
-                                    bf.write(dist + ", ");
-                                    bf.write(angle + "\n");
+                                    if (fileWriteCount == 0) {
+                                        bf.write("Date, ");
+                                        bf.write("Latitude, ");
+                                        bf.write("Longitude, ");
+                                        bf.write("Provider, ");
+                                        bf.write("Interval, ");
+                                        bf.write("dist, ");
+                                        bf.write("angle\n");
+                                    }
+                                    Date d = new Date();
+                                    SimpleDateFormat sdf = new SimpleDateFormat("yy/MM/dd/_HH:mm:ss", Locale.US);
+                                    String dEdit = sdf.format(d);
+                                    bf.write(dEdit + ", ");
+                                    bf.write(sendLatitude + ", ");
+                                    bf.write(sendLongitude + ", ");
+                                    bf.write(sendProvider + ", ");
+                                    bf.write(TimeUnit.MILLISECONDS.toSeconds(receiveInterval) + ", ");
+                                    if (!isFixed) {
+                                        bf.write(", ");
+                                        bf.write("\n");
+                                    }
                                     bf.flush();
                                     bf.close();
 
@@ -1047,17 +950,99 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
                                 } catch (FileNotFoundException e) {
                                     e.printStackTrace();
-                                }
-                                catch (IOException e) {
+                                } catch (IOException e) {
                                     e.printStackTrace();
                                 } finally {
                                     try {
-                                        if(fos != null)
+                                        if (fos != null)
                                             fos.close();
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                     }
                                 }
+                                fileWriteCount++;
+                            }
+
+                            if (isFixed) {
+                                //自己緯度経度、受信緯度経度から距離、角度算出
+                                //常に方位角は計算が必要なので、⊿x、⊿yは毎回求める
+                                double dLatitude = (Double.parseDouble(sendLatitude) - fixedLatitude) * (Math.PI / 180); //緯度変位[rad]
+                                Log.d(TAG, "dLatitude is:" + dLatitude);
+                                double dLongitude = (Double.parseDouble(sendLongitude) - fixedLongitude) * (Math.PI / 180); //経度変位[rad]
+                                Log.d(TAG, "dLongitude is:" + dLongitude);
+                                double dy = EARTHRADIUS * dLatitude; //緯度方向変位距離
+                                Log.d(TAG, "dy is:" + dy);
+                                double dx = EARTHRADIUS * Math.cos(fixedLatitude) * dLongitude; //経度方向変位距離
+                                Log.d(TAG, "dx is:" + dx);
+                                long length = Math.round(Math.sqrt((dx * dx + dy * dy)));
+                                Log.d(TAG, "length is:" + length);
+                                double angle2 = Math.atan((dy / dx)) * 180 / Math.PI;
+                                Log.d(TAG, "angle2 is:" + angle2);
+                                dist = String.valueOf(length);
+
+                                Log.d(TAG, "isFirstReceive is:" + isFirstReceive);
+                                if (isFirstReceive) {
+                                    initAngle = angle2;
+                                    Log.d(TAG, "initAngle is:" + initAngle);
+                                    mHandler.post(new Runnable() { //画面更新
+                                        @Override
+                                        public void run() {
+                                            tvFixedLatitude.setBackgroundColor(Color.argb(255, 255, 250, 205));
+                                            tvFixedLongitude.setBackgroundColor(Color.argb(255, 255, 250, 205));
+                                            tvPeerInitLatitude.setText(sendLatitude);
+                                            tvPeerInitLongitude.setText(sendLongitude);
+                                            tvDistance.setText(dist);
+                                            tvAngle.setText(angle);
+                                            CustomView customView = findViewById(R.id.customView);
+                                            customView.showCanvas(false, Double.parseDouble(angle));
+                                            Log.d(TAG, "In run(): Canvas refreshed");
+                                        }
+                                    });
+                                    isFirstReceive = false;
+                                } else {
+                                    Log.d(TAG, "initAngle is:" + initAngle);
+                                    double dAngle = -(initAngle - angle2);
+                                    Log.d(TAG, "dAngle is:" + dAngle);
+                                    angle = String.valueOf(Math.round(dAngle));
+                                    Log.d(TAG, "angle is:" + angle);
+                                    final double canvasAngle = dAngle;
+                                    mHandler.post(new Runnable() { //画面更新
+                                        @Override
+                                        public void run() {
+                                            tvDistance.setText(dist);
+                                            tvAngle.setText(angle);
+                                            CustomView customView = findViewById(R.id.customView);
+                                            customView.showCanvas(false, canvasAngle);
+                                            Log.d(TAG, "In run(): Canvas refreshed");
+                                        }
+                                    });
+                                }
+//                                if (isFileSaving) {
+//                                    FileOutputStream fos = null;
+//                                    try {
+//                                        fos = new FileOutputStream(new File(receiveLogName), true);
+//                                        BufferedWriter bf = new BufferedWriter(new OutputStreamWriter(fos));
+//
+//                                        bf.write(dist + ", ");
+//                                        bf.write(angle + "\n");
+//                                        bf.flush();
+//                                        bf.close();
+//
+//                                        Log.d(TAG, "Received Log File written.");
+//
+//                                    } catch (FileNotFoundException e) {
+//                                        e.printStackTrace();
+//                                    } catch (IOException e) {
+//                                        e.printStackTrace();
+//                                    } finally {
+//                                        try {
+//                                            if (fos != null)
+//                                                fos.close();
+//                                        } catch (IOException e) {
+//                                            e.printStackTrace();
+//                                        }
+//                                    }
+//                                }
                             }
                         }
 
@@ -1097,13 +1082,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             });
                         }
                     }else if(receiveMap.containsKey("autofix")){
-                        final String sendLatitude = receiveMap.get("sendLatitude");
+                        final String sendLatitude = String.valueOf(Double.parseDouble(receiveMap.get("sendLatitude")) + 0.00000001);
                         Log.d(TAG,"sendLatitude: " + sendLatitude);
-                        final String sendLongitude = receiveMap.get("sendLongitude");
-                        Log.d(TAG,"sendLongitude: " + sendLongitude);
-                        final String sendProvider = receiveMap.get("sendProvider");
-                        Log.d(TAG,"sendProvider: " + sendLongitude);
-                        final String model = receiveMap.get("model");
+                        final String sendLongitude = String.valueOf(Double.parseDouble(receiveMap.get("sendLongitude")) + 0.00000001);
 
                         //受け取った観測側のポジションをPeer側のダミー送信窓にセットする。
                         mHandler.post(new Runnable() {
@@ -1115,12 +1096,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             }
                         });
 
-//                        sleep(500);
+                        sleep(500);
 //                        //Peer側から一度ポジションを送り、観測側のisFirstReceiveフラグを立てる
-//                        UDPDummySenderThread mUDPDummySenderThread = new UDPDummySenderThread();
-//                        mUDPDummySenderThread.start();
+                        UDPDummySenderThread mUDPDummySenderThread = new UDPDummySenderThread();
+                        mUDPDummySenderThread.start();
                     }
-
                 }
             }catch( Exception e ) {
                 e.printStackTrace();
