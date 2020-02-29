@@ -1017,32 +1017,32 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                         }
                                     });
                                 }
-//                                if (isFileSaving) {
-//                                    FileOutputStream fos = null;
-//                                    try {
-//                                        fos = new FileOutputStream(new File(receiveLogName), true);
-//                                        BufferedWriter bf = new BufferedWriter(new OutputStreamWriter(fos));
-//
-//                                        bf.write(dist + ", ");
-//                                        bf.write(angle + "\n");
-//                                        bf.flush();
-//                                        bf.close();
-//
-//                                        Log.d(TAG, "Received Log File written.");
-//
-//                                    } catch (FileNotFoundException e) {
-//                                        e.printStackTrace();
-//                                    } catch (IOException e) {
-//                                        e.printStackTrace();
-//                                    } finally {
-//                                        try {
-//                                            if (fos != null)
-//                                                fos.close();
-//                                        } catch (IOException e) {
-//                                            e.printStackTrace();
-//                                        }
-//                                    }
-//                                }
+                                if (isFileSaving) {
+                                    FileOutputStream fos = null;
+                                    try {
+                                        fos = new FileOutputStream(new File(receiveLogName), true);
+                                        BufferedWriter bf = new BufferedWriter(new OutputStreamWriter(fos));
+
+                                        bf.write(dist + ", ");
+                                        bf.write(angle + "\n");
+                                        bf.flush();
+                                        bf.close();
+
+                                        Log.d(TAG, "Received Log File written.");
+
+                                    } catch (FileNotFoundException e) {
+                                        e.printStackTrace();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    } finally {
+                                        try {
+                                            if (fos != null)
+                                                fos.close();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
                             }
                         }
 
