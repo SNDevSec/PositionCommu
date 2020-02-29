@@ -300,7 +300,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                         bf.flush();
                         bf.close();
 
-                        Log.d("onLocationChanged()", "Row Titles written.");
+                        Log.d("onLocationChanged()", "To Mylog, row titles written.");
 
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
@@ -655,7 +655,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     bf.flush();
                     bf.close();
 
-                    Log.d("onLocationChanged()", "File written.");
+                    Log.d("onLocationChanged()", "Mylog file written.");
 
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
@@ -701,8 +701,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0, this);
             mUDPTestReceiver = new UDPReceiverThread();
             mUDPTestReceiver.start();
+            Toast.makeText(MainActivity.this, "高精度位置情報アクセス許可完了、受信スレッド開始", Toast.LENGTH_SHORT).show();
+
         }
         if(requestCode == REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(MainActivity.this, "ストレージアクセス許可完了", Toast.LENGTH_SHORT).show();
+
         }
     }
 
@@ -785,8 +789,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     /**
-     * あらゆるUDPパケット(テストデータ、測定データ、IPアドレス)を待ち受けるスレッド
-     * 受け取ったUDPパケット(Map型オブジェクト)
+     * あらゆる用途のUDPパケット(テストデータ、測定データ、IPアドレスetc)を待ち受ける常駐スレッド
+     * （このアプリケーションの核となるスレッド）
+     * 受信したUDPパケット(Map型オブジェクト)に含まれるメッセージによって、if分岐で処理を分ける
      */
     class UDPReceiverThread extends Thread {
         private static final String TAG="UDPReceiverThread";
@@ -794,7 +799,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         DatagramSocket mDatagramRecvSocket= null;
         boolean mIsArive= false; //スレッド生存フラグ
 
-        Map<String, String> receiveMap = new HashMap<>();
+        Map<String, String> receiveMap = new HashMap<>(); //受信したUDPパケットの受け皿となるMapオブジェクト
 
         long receiveInterval;
         int fileWriteCount = 0;
@@ -814,6 +819,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             }
 
         }
+        //スレッド開始メソッド
         @Override
         public void start() {
             Log.d(TAG,"start()");
@@ -822,6 +828,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             super.start();
         }
 
+        //スレッド停止メソッド。毎回のアプリ終了時にUDPソケット閉栓のため、必ず実行が必要
         void onStop() {
             Log.d(TAG,"onStop()");
             mIsArive= false;
@@ -830,7 +837,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             Log.d(TAG,"mIsAlive status:"+ mIsArive);
         }
 
-        // 受信用スレッドのメイン関数
+        // 受信用スレッドのメイン処理
         @RequiresApi(api = Build.VERSION_CODES.KITKAT)
         @Override
         public void run() {
@@ -852,7 +859,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     }
                     Log.d(TAG,"In run(): packet received :" + receiveMap);
 
-                    if(receiveMap.containsKey("test")) { //テストデータを受け取ったとき
+                    //ここから、受信したUDPパケット（内のMapオブジェクト格納値）の内容により処理分岐
+                    if(receiveMap.containsKey("test")) { //Peerデバイスからのテスト位置情報受信時処理
                         isIPSearchFinished = true;
                         final String dist = receiveMap.get("dist");
                         Log.d(TAG,"dist: " + dist);
@@ -868,7 +876,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                 Log.d(TAG, "In run(): Canvas refreshed");
                             }
                         });
-                    }else if(receiveMap.containsKey("positionInfo")) { //緯度経度を受け取ったとき
+                    }else if(receiveMap.containsKey("positionInfo")) { //Peerデバイスからの実位置情報受信時処理
                         isIPSearchFinished = true;
                         final String sendLatitude = receiveMap.get("sendLatitude");
                         Log.d(TAG,"sendLatitude: " + sendLatitude);
@@ -878,6 +886,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                         Log.d(TAG,"sendProvider: " + "\"" + sendProvider + "\"");
                         final String model = receiveMap.get("model");
 
+                        //Provider:networkからの受信データは排斥する
                         String str = "network";
                         if(Objects.equals(sendProvider, str)){
                             Log.d(TAG,"networkに一致、処理終了");
@@ -940,13 +949,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                     bf.write(sendProvider + ", ");
                                     bf.write(TimeUnit.MILLISECONDS.toSeconds(receiveInterval) + ", ");
                                     if (!isFixed) {
-                                        bf.write(", ");
-                                        bf.write("\n");
+                                        bf.write("-, ");
+                                        bf.write("-\n");
                                     }
                                     bf.flush();
                                     bf.close();
 
-                                    Log.d(TAG, "Received Log File written.");
+                                    Log.d(TAG, "ReceivedLog File written.");
 
                                 } catch (FileNotFoundException e) {
                                     e.printStackTrace();
@@ -1028,7 +1037,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                         bf.flush();
                                         bf.close();
 
-                                        Log.d(TAG, "Received Log File written.");
+                                        Log.d(TAG, "ReceivedLog File written.");
 
                                     } catch (FileNotFoundException e) {
                                         e.printStackTrace();
@@ -1046,7 +1055,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             }
                         }
 
-                    }else if(receiveMap.containsKey("ipSearch")){
+                    }else if(receiveMap.containsKey("ipSearch")){ //IP探索用パケット受信時処理
                         if(!receiveMap.get("ip").equals(getWifiIPAddress(MainActivity.this))){
                             globals.setPeerIPAddress(receiveMap.get("ip"));
                             Log.d(TAG,"Peer's IP address changed: " + globals.getPeerIPAddress());
@@ -1065,7 +1074,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             });
                         }
 
-                    }else if(receiveMap.containsKey("ipSearchResponse")){
+                    }else if(receiveMap.containsKey("ipSearchResponse")){ //Peerデバイス側のIP探索完了通知パケット受信時処理
                         if(!isIPSearchResReceived){
                             globals.setPeerIPAddress(receiveMap.get("ip"));
                             Log.d(TAG,"Peer's IP address changed: " + globals.getPeerIPAddress());
@@ -1081,7 +1090,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                 }
                             });
                         }
-                    }else if(receiveMap.containsKey("autofix")){
+                    }else if(receiveMap.containsKey("autofix")){ //ダミー位置情報自動設定指示パケット受信時
                         final String sendLatitude = String.valueOf(Double.parseDouble(receiveMap.get("sendLatitude")) + 0.00000001);
                         Log.d(TAG,"sendLatitude: " + sendLatitude);
                         final String sendLongitude = String.valueOf(Double.parseDouble(receiveMap.get("sendLongitude")) + 0.00000001);
@@ -1189,6 +1198,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
+    /**
+     * Peerデバイスに対し、自身の実位置情報を元にテスト送信値を自動設定する信号を送る
+     * 単発スレッド
+     */
     class UDPAutoFixThread extends Thread{
         private static final String TAG="UDPAutoFixThread";
 
