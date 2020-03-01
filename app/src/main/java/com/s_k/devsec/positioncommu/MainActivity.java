@@ -282,11 +282,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     Date d = new Date();
                     SimpleDateFormat sdf = new SimpleDateFormat("yyMMdd_HHmm", Locale.US);
                     String dEdit = sdf.format(d);
-                    myLogName = path + File.separator + dEdit + "_"+ Build.MODEL + ".txt";
+                    myLogName = path + File.separator + "MyLog_" + dEdit + "_"+ Build.MODEL + ".csv";
                     Log.d("btLogStart.onClick", "myLogName is:" + myLogName);
                     //受信用ログファイルについては、ファイル名の途中まで作成しておく
                     //(日付をmyLogと合わせるため)
-                    receiveLogName = path + File.separator + dEdit + "_";
+                    receiveLogName = path + File.separator + "ReceiveLog_"  + dEdit + "_";
 
                     FileOutputStream fos = null;
                     try {
@@ -887,11 +887,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                         final String model = receiveMap.get("model");
 
                         //Provider:networkからの受信データは排斥する
-                        String str = "network";
-                        if(Objects.equals(sendProvider, str)){
-                            Log.d(TAG,"networkに一致、処理終了");
-                            //処理無し
-                        }else{
+//                        String str = "network";
+//                        if(Objects.equals(sendProvider, str)){
+//                            Log.d(TAG,"networkに一致、処理終了");
+//                            //処理無し
+//                        }else{
                             receiveCount++;
                             mHandler.post(new Runnable() { //画面更新
                                 @Override
@@ -923,7 +923,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
                             if (isFileSaving) {
                                 if (fileWriteCount == 0) {
-                                    receiveLogName += model + ".txt";
+                                    receiveLogName += model + ".csv";
                                     Log.d(TAG, "receiveLogName is:" + receiveLogName);
                                 }
                                 FileOutputStream fos = null;
@@ -1053,7 +1053,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                                     }
                                 }
                             }
-                        }
+//                        }
 
                     }else if(receiveMap.containsKey("ipSearch")){ //IP探索用パケット受信時処理
                         if(!receiveMap.get("ip").equals(getWifiIPAddress(MainActivity.this))){
